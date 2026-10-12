@@ -191,7 +191,11 @@
       c.save(); c.beginPath(); c.rect(-CUSH, -CUSH, W + 2 * CUSH, H + 2 * CUSH); c.rect(0, 0, W, H); c.clip('evenodd');
       P.POCKETS.forEach(p => {
         const rd = p.hr * (state.pocketScale || 1), R = rd + 44;
-        const tg = felt.c2;c.fillStyle = tg; c.beginPath(); c.arc(p.hx, p.hy, R, 0, TWO_PI); c.fill();
+        const R2 = R;
+        c.save(); c.beginPath(); c.arc(p.hx, p.hy, R2, 0, TWO_PI); c.clip();
+        c.fillStyle = fg; c.fillRect(-CUSH, -CUSH, W + 2 * CUSH, H + 2 * CUSH);
+        c.globalAlpha = 0.9; c.fillStyle = pat; c.fillRect(-CUSH, -CUSH, W + 2 * CUSH, H + 2 * CUSH);
+        c.restore();
       });
       c.restore();
       // 庫邊橡膠（梯形，靠袋口處斜切）
