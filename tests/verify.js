@@ -182,7 +182,7 @@ section('AI');
 section('線上房間／協定');
 if (process.argv.includes('--no-online')) console.log('  （略過）');
 else {
-  const r = spawnSync(process.execPath, ['--experimental-websocket', path.join(__dirname, 'online-check.js')], { encoding: 'utf8', timeout: 180000 });
+  const r = spawnSync(process.execPath, [path.join(__dirname, 'online-check.js')], { encoding: 'utf8', timeout: 180000 });
   const m = /結果：(\d+) 通過、(\d+) 失敗/.exec(r.stdout || '');
   ok(!!m && +m[2] === 0, '線上整合檢查 ' + (m ? `${m[1]} 通過、${m[2]} 失敗` : '（無法執行：' + (r.stderr || '').slice(0, 120) + '）'));
 }

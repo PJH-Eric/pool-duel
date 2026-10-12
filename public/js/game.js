@@ -229,10 +229,16 @@
         if (this.hand && Math.hypot(t.x - c.x, t.y - c.y) < C.R * 3.2) {
           this.dragMode = 'hand'; this.dragOff = { x: c.x - t.x, y: c.y - t.y };
         } else { this.dragMode = 'aim'; this.lastPtAngle = Math.atan2(t.y - c.y, t.x - c.x); }
+        cv.classList.remove('grab'); cv.classList.add(this.dragMode === 'hand' ? 'grabbing' : 'turning');
         cv.setPointerCapture && cv.setPointerCapture(e.pointerId);
         e.preventDefault();
       });
       cv.addEventListener('pointermove', e => {
+        if (!this.dragMode) {
+          const q0 = this._pt(e), t0 = this.r.toTable(q0.px, q0.py), cp0 = this.cuePos();
+          cv.classList.toggle('aimable', this.phase === 'aiming');
+          cv.classList.toggle('grab', this.phase === 'aiming' && !!this.hand && Math.hypot(t0.x - cp0.x, t0.y - cp0.y) < C.R * 3.2);
+        }
         if (!this.dragMode) {                              // 叫球：滑鼠移到可點的球或袋口時變成手指，不用十字
           let hot = false;
           if (this.phase === 'aiming' && (Rules.needCall(this.state) || Rules.needCallBall(this.state))) {
@@ -261,7 +267,7 @@
           this.hand.x = s.x; this.hand.y = s.y; this.hand.ok = true; this.hand.last = { x: s.x, y: s.y };
           this.pushControls(); this.sendAim();
         }
-        this.dragMode = null;
+        this.dragMode = null; cv.classList.remove('turning', 'grabbing');
       };
       cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
       cv.addEventListener('wheel', e => { if (this.phase === 'aiming') { this.setPower(this.power + (e.deltaY < 0 ? 0.03 : -0.03)); e.preventDefault(); } }, { passive: false });

@@ -7,7 +7,7 @@
     "start": "node server.js",
     "test": "node tests/verify.js",
     "verify": "node tests/verify.js",
-    "test:online": "node --experimental-websocket tests/online-check.js",
+    "test:online": "node tests/online-check.js",
     "inject": "node scripts/inject-server-url.js"
   },
   "engines": {
