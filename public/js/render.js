@@ -231,17 +231,17 @@
       c.save(); c.beginPath(); c.rect(-FR, -FR, ow, oh); c.rect(0, 0, W, H); c.clip('evenodd');
       P.POCKETS.forEach(p => {
         const rd = p.hr * (state.pocketScale || 1), sx = p.hx, sy = p.hy;
-        const bg = c.createLinearGradient(sx - rd, sy - rd, sx + rd, sy + rd); bg.addColorStop(0, '#9a7a46'); bg.addColorStop(0.5, '#5c4222'); bg.addColorStop(1, '#2e1d0d');
+        const bg = c.createLinearGradient(sx - rd, sy - rd, sx + rd, sy + rd); bg.addColorStop(0, '#3a1a10'); bg.addColorStop(0.5, '#220e08'); bg.addColorStop(1, '#120805');
         c.fillStyle = 'rgba(0,0,0,0.5)'; c.beginPath(); c.arc(sx, sy + 1.5, rd + 9.5, 0, TWO_PI); c.fill();
         c.fillStyle = bg; c.beginPath(); c.arc(sx, sy, rd + 8, 0, TWO_PI); c.fill();
-        c.fillStyle = '#1c0e07'; c.beginPath(); c.arc(sx, sy, rd + 4, 0, TWO_PI); c.fill();
-        c.strokeStyle = 'rgba(255,225,170,0.3)'; c.lineWidth = 1.2; c.beginPath(); c.arc(sx, sy, rd + 7.5, Math.PI * 0.9, Math.PI * 1.6); c.stroke();
+        c.fillStyle = '#050302'; c.beginPath(); c.arc(sx, sy, rd + 4, 0, TWO_PI); c.fill();
+        c.strokeStyle = 'rgba(255,200,150,0.12)'; c.lineWidth = 1.2; c.beginPath(); c.arc(sx, sy, rd + 7.5, Math.PI * 0.9, Math.PI * 1.6); c.stroke();
       });
       c.restore();
       // 袋口
       P.POCKETS.forEach((p, i) => {
         const rad = p.hr * (state.pocketScale || 1), sx = p.hx, sy = p.hy;
-        const hole = c.createRadialGradient(sx - 4, sy - 4, 2, sx, sy, rad); hole.addColorStop(0, '#1b1511'); hole.addColorStop(1, '#030201');
+        const hole = c.createRadialGradient(sx - 4, sy - 4, 2, sx, sy, rad); hole.addColorStop(0, '#0a0706'); hole.addColorStop(1, '#000');
         c.fillStyle = hole; c.beginPath(); c.arc(sx, sy, rad, 0, TWO_PI); c.fill();
         c.strokeStyle = 'rgba(0,0,0,0.9)'; c.lineWidth = 3; c.beginPath(); c.arc(sx, sy, rad + 0.5, 0, TWO_PI); c.stroke();
         c.strokeStyle = 'rgba(255,255,255,0.07)'; c.lineWidth = 2; c.beginPath(); c.arc(sx, sy, rad - 4, 0.15 * Math.PI, 0.85 * Math.PI); c.stroke();
