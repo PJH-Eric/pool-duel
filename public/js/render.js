@@ -187,8 +187,7 @@
       c.save(); c.beginPath(); c.rect(-CUSH, -CUSH, W + 2 * CUSH, H + 2 * CUSH); c.clip();
       const pat = c.createPattern(noiseTile(), 'repeat'); c.globalAlpha = 0.9; c.fillStyle = pat; c.fillRect(-CUSH, -CUSH, W + 2 * CUSH, H + 2 * CUSH);
       c.restore();
-      // 庫邊橡膠：整條畫到底，袋口的黑色「喉部」再蓋上去，斜端就是袋口切線，不會留下三角形或縫
-      const cg = C.CORNER_GAP, sg = C.SIDE_GAP;
+      // 庫邊橡膠：以圓形袋口切出平滑弧線。
       const strips = [
         [[0, 0], [W, 0], [W, -CUSH], [0, -CUSH]], [[0, H], [W, H], [W, H + CUSH], [0, H + CUSH]],
         [[0, 0], [0, H], [-CUSH, H], [-CUSH, 0]], [[W, 0], [W, H], [W + CUSH, H], [W + CUSH, 0]]
@@ -211,25 +210,6 @@
         c.fillStyle = sh; c.fillRect(0, 0, W, H);
       });
       c.restore();
-      // 袋口外形 = 黑洞圓 + 兩個袋角（庫邊尖端）的凸包：兩側斜邊就是袋口斜切面
-      function mouth(p, rd) {
-        const pts = [];
-        for (let k = 0; k < 96; k++) { const t = k / 96 * TWO_PI; pts.push([p.hx + Math.cos(t) * rd, p.hy + Math.sin(t) * rd]); }
-        const corner = p.hx < W / 2 - 1 || p.hx > W / 2 + 1;
-        if (corner) {
-          const sx = p.hx < W / 2 ? 1 : -1, sy = p.hy < H / 2 ? 1 : -1, x0 = p.hx < W / 2 ? 0 : W, y0 = p.hy < H / 2 ? 0 : H;
-          pts.push([x0 + sx * cg, y0], [x0, y0 + sy * cg]);
-        } else {
-          const y0 = p.hy < H / 2 ? 0 : H;
-          pts.push([W / 2 - sg, y0], [W / 2 + sg, y0]);
-        }
-        pts.sort((u, v) => u[0] - v[0] || u[1] - v[1]);
-        const cr = (o, a, b2) => (a[0] - o[0]) * (b2[1] - o[1]) - (a[1] - o[1]) * (b2[0] - o[0]);
-        const lo = [], up = [];
-        for (const q of pts) { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], q) <= 0) lo.pop(); lo.push(q); }
-        for (let i = pts.length - 1; i >= 0; i--) { const q = pts[i]; while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], q) <= 0) up.pop(); up.push(q); }
-        lo.pop(); up.pop(); return lo.concat(up);
-      }
       // 圓袋嵌入桌布，洞心及半徑與進袋判定共用。
       c.save();
       P.POCKETS.forEach(p => {
@@ -240,7 +220,6 @@
         c.restore();
         const hole = c.createRadialGradient(p.hx, p.hy, rd * 0.2, p.hx, p.hy, rd * 1.6);
         hole.addColorStop(0, '#000'); hole.addColorStop(0.6, '#050302'); hole.addColorStop(1, '#0d0806');
-        poly(mouth(p, rd)); c.fillStyle = hole; c.fill();
         c.beginPath(); c.arc(p.hx, p.hy, rd, 0, TWO_PI);
         c.fillStyle = hole; c.fill();
         c.strokeStyle = '#101711'; c.lineWidth = 2; c.stroke();
