@@ -193,7 +193,11 @@ button { font-family: inherit; }
 .slider.power .fill { position: absolute; left: 4px; top: 5px; bottom: 5px; border-radius: 14px; background: linear-gradient(90deg, #2fc07e, #e7d34a 60%, #e0503f); pointer-events: none; opacity: .95; }
 .slider.off { opacity: .45; pointer-events: none; }
 .shoot { height: 64px; font-size: 24px; letter-spacing: .3em; border-radius: 18px; padding: 0 10px; }
-.spin-ctl { position: relative; }
+.spin-ctl { position: relative; display: flex; align-items: center; gap: 8px; }
+.cue-modes { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
+.cue-modes button { appearance: none; cursor: pointer; font: inherit; font-weight: 800; font-size: 13px; letter-spacing: .08em; color: var(--cream); background: linear-gradient(#4a2d1a, #35200f); border: 2px solid #5a3a22; border-radius: 10px; padding: 3px 8px; min-width: 52px; min-height: 26px; line-height: 1.1; }
+.cue-modes button[aria-pressed="true"] { background: linear-gradient(#f3c968, #d79b32); color: #2b1706; border-color: var(--brass-l); box-shadow: 0 0 10px rgba(243,201,104,.45); }
+.cue-modes button:disabled { opacity: .4; cursor: default; }
 .spin-chip { appearance: none; display: flex; flex-direction: column; align-items: center; gap: 3px; background: none; border: 0; color: inherit; cursor: pointer; font: inherit; }
 .spin-mini { width: 54px; height: 54px; border-radius: 50%; position: relative; background: radial-gradient(circle at 35% 30%, #fff, #e6dfcd 60%, #b9b09a); box-shadow: 0 4px 8px rgba(0,0,0,.5), inset -3px -4px 8px rgba(0,0,0,.25); }
 .spin-mini i, .spin-ball i { position: absolute; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: #e0302a; box-shadow: 0 0 0 2px rgba(255,255,255,.7); left: 50%; top: 50%; }
@@ -267,6 +271,7 @@ button { font-family: inherit; }
   .g-controls .spin-ctl { grid-area: spin; } .g-controls .fine-ctl { grid-area: fine; } .g-controls .power-ctl { grid-area: power; }
   .g-controls .shoot { grid-area: shoot; height: 58px; }
   .spin-mini { width: 46px; height: 46px; }
+  .cue-modes button { min-height: 22px; font-size: 12px; padding: 1px 6px; min-width: 46px; }
   .form-grid { grid-template-columns: 90px 1fr; }
 }
 @media (min-aspect-ratio: 1/1) and (min-width: 821px) { .capsules { display: none; } }

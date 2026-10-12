@@ -315,7 +315,7 @@
       const dis = !c.enabled;
       $('#btnShoot').disabled = !c.canShoot;
       $('#fineSlider').classList.toggle('off', dis); $('#powerSlider').classList.toggle('off', dis);
-      $('#spinBtn').disabled = dis; $('#gControls').classList.toggle('spectate', !!c.spectator);
+      $('#spinBtn').disabled = dis; $$('#cueModes button').forEach(b => { b.disabled = dis; }); $('#gControls').classList.toggle('spectate', !!c.spectator);
       $('#btnShoot').textContent = c.spectator ? '觀戰中' : (c.needCall && !c.canShoot ? '先選袋口' : (c.thinking ? '對手思考中' : '擊 球'));
     },
     power(p) { $('#powerVal').textContent = Math.round(p * 100) + '%'; powerSlider.render(); },
@@ -337,10 +337,13 @@
   /* 擊球點 */
   let spin = { u: 0, v: 0 };
   function setSpinDot(u, v) {
-    spin = { u, v };
+    spin = { u, v }; syncCueModes();
     const l = (50 + u * 42) + '%', t = (50 + v * 42) + '%';
     [$('#spinDot'), $('#spinMini i')].forEach(d => { d.style.left = l; d.style.top = t; });
   }
+  const MODE_NOTE = { follow: '推桿：碰到球後，母球會繼續往前追', stop: '定桿：正撞時，母球會停在原地', draw: '拉桿：碰到球後，母球會往回縮', jump: '跳桿：母球會飛過黃色圈前面的球再落地（力度越大飛越遠）' };
+  function syncCueModes() { const m = App.game && App.game.cueMode ? App.game.cueMode() : null; $$('#cueModes button').forEach(b => b.setAttribute('aria-pressed', b.dataset.mode === m ? 'true' : 'false')); }
+  $$('#cueModes button').forEach(b => { b.onclick = () => { const g = App.game; if (!g) return; g.setCueMode(b.dataset.mode); const m = g.cueMode(); if (m && g.ui.toast) g.ui.toast(MODE_NOTE[m]); }; });
   function setSpinOpen(open) { $('#spinPop').classList.toggle('hidden', !open); $('#spinBtn').setAttribute('aria-expanded', open ? 'true' : 'false'); }
   $('#spinBtn').onclick = () => setSpinOpen($('#spinPop').classList.contains('hidden'));
   $('#spinReset').onclick = () => { App.game && App.game.setSpin(0, 0); };
@@ -459,6 +462,8 @@
       <b>瞄準</b><span>在桌面上任意處<b>拖曳</b>，球桿就會繞著母球轉。下方的「微調角度」可以做 0.05° 的精調。</span>
       <b>力度</b><span>拖曳「力度」條（左弱右強）。球桿後拉的距離會跟著變。</span>
       <b>擊球</b><span>按下大大的「擊球」按鈕才會出桿，拖曳與調力度都不會誤擊球。</span>
+      <b>推桿／定桿／拉桿</b><span>擊球鈕左邊有三個快捷：<b>推桿</b>＝打母球偏上，碰到球後母球<b>繼續往前追</b>；<b>定桿</b>＝正撞時母球<b>停在原地</b>（做走位最常用）；<b>拉桿</b>＝打偏下，碰到球後母球<b>往回縮</b>。選了之後瞄準線的白色短線會即時顯示母球碰球後會跑去哪裡；再按一次同一個就取消。快鍵：1 推桿、2 定桿、3 拉桿、0 取消。</span>
+      <b>跳桿</b><span>前面有球擋住路線時，按「<b>跳桿</b>」（快鍵 4）：母球會<b>飛過去</b>，落在瞄準線上黃色圈的位置才開始滾；飛行時碰不到地上的球、也不會掉進袋口。<b>力度越大飛得越遠</b>（約 130～460 單位），落地會損失一點速度，而且跳桿時不能同時用推／定／拉桿。落地後第一個碰到的球仍然要合規則，不然一樣算犯規。</span>
       <b>擊球點</b><span>點左下的「擊球點」，在母球上點一個位置：偏上＝出桿後追球、偏下＝縮球（拉回）、偏左右＝側旋，碰到庫邊會偏折。平常保持正中央就好。</span>
       <b>自由球</b><span>對手犯規後，你的母球會出現綠色虛線圈，可以拖曳到任何空位；紅色代表位置不合法。</span>
       <b>電腦鍵盤</b><span>← → 微調角度（Shift 更細）、↑ ↓ 力度、空白鍵或 Enter 擊球、滑鼠滾輪調力度。</span>

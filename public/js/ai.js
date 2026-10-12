@@ -77,8 +77,8 @@
     return Math.max(8, Math.min(1000, Math.round(q * 1000)));
   }
   function powerFor(c, extra) {
-    var vObj = Math.sqrt(2 * C.DECEL * (c.d2 + 60)) * 1.05 + 30;
-    var vPre = Math.sqrt(vObj * vObj / Math.max(0.35, c.cos) + 2 * C.DECEL * c.d1) * (extra || 1);
+    var vObj = Math.sqrt(2 * C.DECEL_EFF * (c.d2 + 60)) * 1.05 + 30;
+    var vPre = Math.sqrt(vObj * vObj / Math.max(0.35, c.cos) + 2 * C.DECEL_EFF * c.d1) * (extra || 1);
     return speedToPower(vPre);
   }
 

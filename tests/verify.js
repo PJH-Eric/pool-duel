@@ -96,6 +96,32 @@ section('規則：搶分賽（含幼幼班不扣分）');
   ok(k.kids === true, '幼幼班模式旗標存在（犯規不扣分）');
 }
 
+section('推桿／定桿／拉桿與滑動');
+{
+  const run = (x0, x1, pw, sy) => { const w = P.makeWorld([{ id: 0, x: x0, y: 250, pocket: -1 }, { id: 1, x: x1, y: 250, pocket: -1 }]); P.applyShot(w, Object.assign(P.quantizeDir(1, 0), { power: pw, sx: 0, sy })); P.runToRest(w); return w.balls; };
+  const contact = x1 => x1 - 2 * C.R;
+  const stopSy = Math.round(C.PRESET_STOP * C.SPIN_MAX * 1000) * -1;
+  const folSy = Math.round(-C.PRESET_FOLLOW * C.SPIN_MAX * 1000), drawSy = Math.round(-C.PRESET_DRAW * C.SPIN_MAX * 1000);
+  let stopOk = true;
+  for (const [x0, x1, pw] of [[100, 300, 500], [100, 500, 400], [150, 600, 450]]) { const b = run(x0, x1, pw, stopSy); if (Math.abs(b[0].x - contact(x1)) > 3) stopOk = false; }
+  ok(stopOk, '定桿：正撞後母球停在碰撞位置（近、中、遠距離）');
+  const f = run(100, 300, 500, folSy)[0].x, n = run(100, 300, 500, 0)[0].x, d = run(100, 300, 500, drawSy)[0].x;
+  ok(f > n + 40 && d < n - 40, `推桿往前追（${f.toFixed(0)}）、拉桿往回縮（${d.toFixed(0)}）、平桿停在中間（${n.toFixed(0)}）`);
+  const o = run(100, 200, 300, 0)[1].x - 200;
+  ok(o > 120, `被擊到的球會滑得夠遠（中力道被撞後滑 ${o.toFixed(0)} 單位）`);
+  const w = P.makeWorld([{ id: 0, x: 20, y: 250, pocket: -1 }]); P.applyShot(w, Object.assign(P.quantizeDir(1, 0.02), { power: 1000, sx: 0, sy: 0 }));
+  ok(P.runToRest(w).t < 9, '全力一桿能在 9 秒內停下（動畫不會太長）');
+}
+
+section('跳桿');
+{
+  const mk = (jump, pw) => { const w = P.makeWorld([{ id: 0, x: 100, y: 250, pocket: -1 }, { id: 1, x: 200, y: 250, pocket: -1 }, { id: 2, x: 480, y: 250, pocket: -1 }]); P.applyShot(w, Object.assign(P.quantizeDir(1, 0), { power: pw, sx: 0, sy: 0 }, jump ? { jump: 1 } : {})); const r = P.runToRest(w); return { w, r }; };
+  ok(mk(false, 650).r.firstContact === 1, '平打：母球先碰到擋路的 1 號球');
+  ok(mk(true, 650).r.firstContact === 2, '跳桿：母球飛過擋路的 1 號球，先碰到後面的 2 號球');
+  ok(mk(true, 150).r.firstContact !== 2, '力度小飛不遠：落地後才碰球（不會一路飛過去）');
+  ok(mk(true, 650).r.hash === mk(true, 650).r.hash, '跳桿結果具決定性');
+}
+
 section('AI');
 {
   function play(kind, a, b, seed) {

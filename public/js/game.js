@@ -17,7 +17,7 @@
       this.raf = 0; this.last = 0; this.running = false;
       this.state = null; this.world = null; this.cfg = null;
       this.phase = 'idle';                  // idle | aiming | waiting | thinking | strike | roll | choice | over
-      this.angle = 0; this.fine = 0; this.power = 0.5; this.spin = { u: 0, v: 0 };
+      this.angle = 0; this.fine = 0; this.power = 0.5; this.spin = { u: 0, v: 0 }; this.jump = false;
       this.call = -1; this.hand = null; this.dragMode = null;
       this.dropping = []; this.queue = []; this.pendingSettle = null; this.provisional = false;
       this.remoteAim = null; this.curShot = null; this.anim = null; this.aiAnim = null;
@@ -168,7 +168,23 @@
     setFine(d) { this.fine = Math.max(-4, Math.min(4, d)); this.ui.fine && this.ui.fine(this.fine); this.sendAim(); }
     setSpin(u, v) {
       const l = Math.hypot(u, v); if (l > 1) { u /= l; v /= l; }
-      this.spin = { u, v }; this.ui.spin && this.ui.spin(u, v);
+      this.spin = { u, v }; if (this.jump && (u !== 0 || v !== 0)) this.jump = false; this.ui.spin && this.ui.spin(u, v);
+    }
+    /* 推桿／定桿／拉桿：一鍵設定擊球點（再按一次同一個＝回到正中央） */
+    cueMode() {
+      if (this.jump) return 'jump';
+      const { u, v } = this.spin; if (Math.abs(u) > 0.02) return null;
+      if (Math.abs(v - C.PRESET_FOLLOW) < 0.02) return 'follow';
+      if (Math.abs(v - C.PRESET_STOP) < 0.015) return 'stop';
+      if (Math.abs(v - C.PRESET_DRAW) < 0.02) return 'draw';
+      return null;
+    }
+    setCueMode(mode) {
+      if (this.phase !== 'aiming') return;
+      if (this.cueMode() === mode) { this.jump = false; this.setSpin(0, 0); return; }
+      if (mode === 'jump') { this.setSpin(0, 0); this.jump = true; this.ui.spin && this.ui.spin(0, 0); Sound.sfx.click && Sound.sfx.click(); return; }
+      this.setSpin(0, mode === 'follow' ? C.PRESET_FOLLOW : (mode === 'draw' ? C.PRESET_DRAW : C.PRESET_STOP));
+      Sound.sfx.click && Sound.sfx.click();
     }
     nudge(deg) { if (this.phase === 'aiming') { this.angle += rad(deg); this.sendAim(); } }
     selectPocket(i) { if (this.phase === 'aiming' && Rules.needCall(this.state)) { this.call = i; Sound.sfx.click(); this.pushControls(); this.refresh(); } }
@@ -223,6 +239,11 @@
       if (e.key === 'ArrowRight') { this.nudge(fine); return true; }
       if (e.key === 'ArrowUp') { this.setPower(this.power + 0.02); return true; }
       if (e.key === 'ArrowDown') { this.setPower(this.power - 0.02); return true; }
+      if (e.key === '1') { this.setCueMode('follow'); return true; }
+      if (e.key === '2') { this.setCueMode('stop'); return true; }
+      if (e.key === '3') { this.setCueMode('draw'); return true; }
+      if (e.key === '4') { this.setCueMode('jump'); return true; }
+      if (e.key === '0') { this.jump = false; this.setSpin(0, 0); return true; }
       if (e.key === ' ' || e.key === 'Enter') { this.shoot(); return true; }
       return false;
     }
@@ -240,6 +261,7 @@
     buildShot() {
       const d = this.aimDir(), q = P.quantizeDir(d.dx, d.dy);
       const shot = { ax: q.ax, ay: q.ay, power: Math.max(8, Math.round(this.power * 1000)), sx: Math.round(this.spin.u * C.SPIN_MAX * 1000), sy: Math.round(-this.spin.v * C.SPIN_MAX * 1000) };
+      if (this.jump) { shot.jump = 1; shot.sx = 0; shot.sy = 0; }
       if (this.hand) shot.cue = { x: Math.round(this.hand.x * 100) / 100, y: Math.round(this.hand.y * 100) / 100 };
       if (Rules.needCall(this.state)) shot.call = this.call;
       return shot;
@@ -254,6 +276,7 @@
       Sound.unlock();
       if (this.isOnline) { this.cfg.net.send({ type: 'shot', shot }); this.awaitEcho = true; }
       this.playShot(shot, this.mySeat);
+      this.jump = false; this.setSpin(0, 0);    // 每桿都重新選：推桿/定桿/拉桿用完自動回到正中央
       return true;
     }
 
@@ -315,6 +338,7 @@
       for (let i = 0; i < ev.length; i++) {
         const e = ev[i];
         if (e.type === 'hit') Sound.sfx.hit(e.speed);
+        else if (e.type === 'land') Sound.sfx.hit(260);
         else if (e.type === 'rail') Sound.sfx.rail(e.speed);
         else if (e.type === 'pocket') {
           Sound.sfx.pocket();
@@ -340,7 +364,7 @@
       if (cueOk && this.phase === 'aiming') {
         const d = this.aimDir(), cp = { x: cue.x, y: cue.y };
         sc.cue = { show: true, x: cp.x, y: cp.y, dx: d.dx, dy: d.dy, pull: 8 + this.power * 70, skin: this.mySkin() };
-        if (aimMode !== 'off') sc.aim = { lines: this.r.aimLines(balls, cp, d.dx, d.dy, aimMode) };
+        if (aimMode !== 'off') sc.aim = { lines: this.r.aimLines(balls, cp, d.dx, d.dy, aimMode, -this.spin.v, this.jump ? C.JUMP_MIN + C.JUMP_K * this.power : 0) };
         if (this.hand) sc.hand = { x: this.hand.x, y: this.hand.y, ok: this.hand.ok };
         if (Rules.needCall(s)) sc.pocketCall = { selectable: true, selected: this.call };
       } else if (cueOk && this.phase === 'thinking') {

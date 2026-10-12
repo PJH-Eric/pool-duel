@@ -18,7 +18,17 @@
   function mulberry(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 
   /* ---------- 瞄準線（用幾何算：球心射線對球與庫邊） ---------- */
-  function aimLines(balls, cue, dx, dy, mode) {
+  function aimLines(balls, cue, dx, dy, mode, ts, jumpDist) {
+    ts = ts || 0;
+    if (jumpDist > 0 && mode !== 'off') {            // 跳桿：先飛到落點，再從落點往後算一般的瞄準線
+      let tw0 = 1e9;
+      if (dx > 1e-9) tw0 = Math.min(tw0, (W - R - cue.x) / dx); else if (dx < -1e-9) tw0 = Math.min(tw0, (R - cue.x) / dx);
+      if (dy > 1e-9) tw0 = Math.min(tw0, (H - R - cue.y) / dy); else if (dy < -1e-9) tw0 = Math.min(tw0, (R - cue.y) / dy);
+      const jd = Math.max(0, Math.min(jumpDist, tw0 - 1)), land = { x: cue.x + dx * jd, y: cue.y + dy * jd };
+      const rest = aimLines(balls, land, dx, dy, mode, 0, 0);
+      rest.jump = { from: { x: cue.x, y: cue.y }, to: land };
+      return rest;
+    }
     const out = { ghost: null, path: [], target: null, deflect: null, bounce: null };
     if (mode === 'off') return out;
     let best = 1e9, hit = null;
@@ -41,9 +51,12 @@
       const L = mode === 'short' ? 70 : 170;
       out.target = [{ x: hit.x, y: hit.y }, { x: hit.x + nx * L, y: hit.y + ny * L }];
       if (mode !== 'short') {
-        const dot = dx * nx + dy * ny;
-        let tx = dx - dot * nx, ty = dy - dot * ny; const tl = Math.sqrt(tx * tx + ty * ty);
-        if (tl > 0.02) out.deflect = [{ x: gx, y: gy }, { x: gx + tx / tl * 90 * Math.min(1, tl * 1.4), y: gy + ty / tl * 90 * Math.min(1, tl * 1.4) }];
+        // 預測碰球後母球的走向（含推桿／定桿／拉桿）：v' = d·(1 + ts·K·vn) − (1+E)/2·vn·n
+        const vn = dx * nx + dy * ny, k = 1 + ts * C.FOLLOW_K * vn, c2 = (1 + C.E_BALL) * 0.5 * vn;
+        let tx = dx * k - nx * c2, ty = dy * k - ny * c2; const mag = Math.sqrt(tx * tx + ty * ty);
+        const len = Math.max(8, Math.min(190, 150 * mag));
+        if (mag > 0.012) out.deflect = [{ x: gx, y: gy }, { x: gx + tx / mag * len, y: gy + ty / mag * len }];
+        out.deflectMag = mag;
       }
     } else if (tw < 1e8) {
       const wx = cue.x + dx * tw, wy = cue.y + dy * tw;
@@ -316,11 +329,12 @@
       return sp;
     }
 
-    function drawBall(b, scale, alpha) {
+    function drawBall(b, scale, alpha, lift) {
       const r = updateRoll(b);
       let sp = state.sprites[b.id];
       if (!sp || r.dirty) sp = shade(b.id, r);
       const p = toScreen(b.x, b.y), lut = getLut(), sz = lut.size / state.dpr * (scale || 1);
+      if (lift) p.y -= lift;
       g.save();
       if (alpha != null) g.globalAlpha = alpha;
       g.drawImage(sp.cv, p.x - sz / 2, p.y - sz / 2, sz, sz);
@@ -349,6 +363,7 @@
       }
     }
     function drawShadow(b, scale) {
+      if (b.air > 0 && b.air0 > 0) { const f = 1 - b.air / b.air0; scale = (scale || 1) * (1 - 0.35 * 4 * f * (1 - f)); }
       const p = toScreen(b.x, b.y), rpx = R * state.s * (scale || 1);
       const sh = vecToScreen(3, 5);
       const gr = g.createRadialGradient(p.x + sh.x * state.s * 0.9, p.y + sh.y * state.s * 0.9, rpx * 0.2, p.x + sh.x * state.s * 0.9, p.y + sh.y * state.s * 0.9, rpx * 1.35);
@@ -415,6 +430,13 @@
       const bl = sc.balls;
       if (sc.aim) {
         const A = sc.aim;
+        if (A.lines.jump) {                           // 跳桿：飛行段畫成拱形虛線，落點畫黃色圈
+          const J = A.lines.jump, a = toScreen(J.from.x, J.from.y), b2 = toScreen(J.to.x, J.to.y);
+          const mx = (a.x + b2.x) / 2, my = (a.y + b2.y) / 2 - Math.hypot(b2.x - a.x, b2.y - a.y) * 0.22;
+          g.save(); g.strokeStyle = 'rgba(255,214,102,0.95)'; g.lineWidth = 2.6 * state.s; g.setLineDash([4 * state.s, 7 * state.s]); g.lineCap = 'round';
+          g.beginPath(); g.moveTo(a.x, a.y); g.quadraticCurveTo(mx, my, b2.x, b2.y); g.stroke(); g.restore();
+          ring(J.to.x, J.to.y, R + 3, 'rgba(255,214,102,0.95)', 2.6, [5, 4]);
+        }
         if (A.lines.path.length) line(A.lines.path, 'rgba(255,255,255,0.82)', 2.4, [10, 8]);
         if (A.lines.target) line(A.lines.target, 'rgba(255,225,120,0.9)', 2.6, [8, 7]);
         if (A.lines.deflect) line(A.lines.deflect, 'rgba(255,255,255,0.4)', 2, [5, 7]);
@@ -426,7 +448,13 @@
       // 自由球虛框
       if (sc.hand) ring(sc.hand.x, sc.hand.y, R + 6, sc.hand.ok ? 'rgba(120,255,160,0.9)' : 'rgba(255,90,80,0.95)', 3);
       for (const b of bl) { if (b.pocket < 0 && b.id !== 0) drawBall(b); }
-      for (const b of bl) { if (b.pocket < 0 && b.id === 0) drawBall(b, 1, sc.hand && !sc.hand.ok ? 0.55 : null); }
+      for (const b of bl) {
+        if (b.pocket < 0 && b.id === 0) {
+          let sc2 = 1, lift = 0;
+          if (b.air > 0 && b.air0 > 0) { const f = 1 - b.air / b.air0, hh = 4 * f * (1 - f); sc2 = 1 + 0.28 * hh; lift = hh * R * state.s * 2.2; }
+          drawBall(b, sc2, sc.hand && !sc.hand.ok ? 0.55 : null, lift);
+        }
+      }
       // 進袋動畫
       if (sc.dropping) for (const d of sc.dropping) {
         const k = clamp01(d.t), pp = P.POCKETS[d.pocket];
