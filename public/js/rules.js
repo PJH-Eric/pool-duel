@@ -113,6 +113,7 @@
     if (Math.abs(shot.ax) > 1000001 || Math.abs(shot.ay) > 1000001 || shot.ax !== Math.round(shot.ax) || shot.ay !== Math.round(shot.ay)) return '出桿資料不正確';
     if (!(shot.power >= 0 && shot.power <= 1000)) return '力度不正確';
     if (shot.power < 5) return '力度太小';
+    if (shot.jump != null && shot.jump !== 0 && shot.jump !== 1) return '出桿資料不正確';
     var lim = C.SPIN_MAX * 1000 + 1;
     if (Math.abs(shot.sx || 0) > lim || Math.abs(shot.sy || 0) > lim) return '擊球點不正確';
     if (s.hand) {

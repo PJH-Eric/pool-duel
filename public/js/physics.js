@@ -29,7 +29,7 @@
     };
     for (var i = 0; i < balls.length; i++) {
       var b = balls[i];
-      w.balls.push({ id: b.id, x: b.x, y: b.y, vx: 0, vy: 0, pocket: b.pocket == null ? -1 : b.pocket, ts: 0, ss: 0, spinUsed: false });
+      w.balls.push({ id: b.id, x: b.x, y: b.y, vx: 0, vy: 0, pocket: b.pocket == null ? -1 : b.pocket, ts: 0, ss: 0, spinUsed: false, slv: 0, air: 0, air0: 0 });
     }
     resetCtx(w);
     return w;
@@ -127,6 +127,7 @@
     var preVx = cue ? cue.vx : 0, preVy = cue ? cue.vy : 0;
     var j = (1 + C.E_BALL) * 0.5 * vn;
     a.vx -= j * nx; a.vy -= j * ny; b.vx += j * nx; b.vy += j * ny;
+    a.slv = C.SLIDE_END * Math.sqrt(a.vx * a.vx + a.vy * a.vy); b.slv = C.SLIDE_END * Math.sqrt(b.vx * b.vx + b.vy * b.vy);
     if (cue) {
       if (w.ctx.firstContact < 0) w.ctx.firstContact = (cue === a ? b : a).id;
       pushUnique(w.ctx.hitOrder, (cue === a ? b : a).id);
@@ -138,6 +139,7 @@
         }
         cue.spinUsed = true;
       }
+      cue.slv = C.SLIDE_END * Math.sqrt(cue.vx * cue.vx + cue.vy * cue.vy);
     }
     if (vn > 8) ev(w, { type: 'hit', a: a.id, b: b.id, speed: vn, x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
   }
@@ -158,7 +160,13 @@
         if (b.vx !== 0 || b.vy !== 0) {
           b.x += b.vx * h; b.y += b.vy * h;
           var sp = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
-          var ns = sp - C.DECEL * h;
+          var dcl = C.DECEL_ROLL;
+          if (b.air > 0) {                           // 跳桿飛行中：沒有摩擦；時間到就落地
+            b.air -= h; dcl = 0;
+            if (b.air <= 0) { b.air = 0; b.vx *= C.JUMP_LAND; b.vy *= C.JUMP_LAND; b.slv = C.SLIDE_END * Math.sqrt(b.vx * b.vx + b.vy * b.vy); ev(w, { type: 'land', x: b.x, y: b.y }); }
+          }
+          else if (b.slv > 0) { if (sp > b.slv) dcl = C.DECEL; else b.slv = 0; }   // 先滑（摩擦大），滑到 5/7 速度後轉純滾動（阻力小）
+          var ns = sp - dcl * h;
           if (ns < C.ZERO_V) { b.vx = 0; b.vy = 0; }
           else { var k = ns / sp; b.vx *= k; b.vy *= k; }
           if (b.id === 0) { var dec = 1 - C.SPIN_DECAY * h; b.ts *= dec; b.ss *= dec; }
@@ -171,6 +179,7 @@
           for (j = i + 1; j < n; j++) {
             var c = balls[j];
             if (c.pocket >= 0) continue;
+            if (a.air > 0 || c.air > 0) continue;       // 飛在空中的母球不會碰到地上的球
             if (a.vx === 0 && a.vy === 0 && c.vx === 0 && c.vy === 0) continue;
             ballCollide(w, a, c);
           }
@@ -180,6 +189,7 @@
         b = balls[i];
         if (b.pocket >= 0) continue;
         wallCollide(w, b);
+        if (b.air > 0) continue;                      // 空中不會進袋、也不會撞袋口尖角
         jawCollide(w, b);
         for (var p = 0; p < 6; p++) {
           var P = POCKETS[p], dx = b.x - P.x, dy = b.y - P.y, cr = capRadius(P, w.pocketScale);
@@ -238,7 +248,15 @@
     l = Math.sqrt(dx * dx + dy * dy); dx /= l; dy /= l;
     var v = powerToSpeed(shot.power);
     resetCtx(w);
+    cue.air = 0; cue.air0 = 0;
+    if (shot.jump) {                                // 跳桿：不帶旋轉，飛行時間 = 距離 / 速度
+      sx = 0; sy = 0; cue.vx = dx * v; cue.vy = dy * v;
+      var jd = C.JUMP_MIN + C.JUMP_K * Math.min(1, shot.power / 1000);
+      cue.air = jd / v; cue.air0 = cue.air;
+    }
     cue.vx = dx * v; cue.vy = dy * v; cue.ts = sy; cue.ss = sx; cue.spinUsed = false;
+    // 母球剛被擊出時在「滑」：上旋（推桿）滑得少、下旋（拉桿）滑得多
+    var rr = C.SLIDE_END + (1 - C.SLIDE_END) * sy; if (rr < 0.4) rr = 0.4; if (rr > 1) rr = 1; cue.slv = shot.jump ? 0 : rr * v;
     ev(w, { type: 'strike', speed: v });
   }
 
