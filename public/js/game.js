@@ -37,7 +37,8 @@
       this.mySeat = this.cfg.mySeat;
       this.r.setTheme({ felt: this.store.get('felt'), scene: this.store.get('scene'), cue: this.store.get('cue'), bigNumbers: this.store.get('bigNumbers') });
       this.r.resetRolls(); this.r.resize();
-      this.power = 0.5; this.fine = 0; this.spin = { u: 0, v: 0 }; this.ui.spin && this.ui.spin(0, 0);
+      this.power = 0.5; this.fine = 0; this.spin = { u: 0, v: 0 }; this.jump = false;
+      this.ui.spin && this.ui.spin(0, 0); this.ui.power && this.ui.power(this.power); this.ui.fine && this.ui.fine(0);   // 新局一開始就把力度條、微調、擊球點畫面同步成真正的預設值
       if (this.cfg.state) this.state = this.cfg.state;
       else {
         const kids = this.cfg.level === 'kids';

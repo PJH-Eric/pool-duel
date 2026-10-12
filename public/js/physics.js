@@ -26,7 +26,10 @@
     [W / 2 - SG, -JR], [W / 2 + SG, -JR], [W / 2 - SG, H + JR], [W / 2 + SG, H + JR]
   ];
 
-  function capRadius(p, scale) { return p.hr * scale + C.CAP_MARGIN; }
+  function capRadius(p, scale, speed) {
+    var k = speed ? Math.min(1, speed / C.CAP_FAST_V) : 0;
+    return p.hr * scale + C.CAP_MARGIN - C.CAP_FAST_PEN * k;
+  }
 
   function makeWorld(balls, opts) {
     opts = opts || {};
@@ -199,7 +202,7 @@
         if (b.air > 0) continue;                      // 空中不會進袋、也不會撞袋口尖角
         jawCollide(w, b);
         for (var p = 0; p < 6; p++) {
-          var P = POCKETS[p], dx = b.x - P.hx, dy = b.y - P.hy, cr = capRadius(P, w.pocketScale);
+          var P = POCKETS[p], dx = b.x - P.hx, dy = b.y - P.hy, cr = capRadius(P, w.pocketScale, Math.sqrt(b.vx * b.vx + b.vy * b.vy));
           if (dx * dx + dy * dy < cr * cr) { pocketBall(w, b, p); break; }
         }
         if (b.pocket < 0 && (b.x < -R || b.x > W + R || b.y < -R || b.y > H + R)) {

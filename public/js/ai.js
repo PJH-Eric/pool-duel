@@ -1,4 +1,4 @@
-/* 電腦對手：四個難度。與遊戲共用同一套物理與規則（用引擎模擬候選桿）。 */
+/* 電腦對手：五個難度（幼幼班／簡單／普通／困難／神話）。與遊戲共用同一套物理與規則（用引擎模擬候選桿）。 */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory(require('./physics.js'), require('./rules.js'));
   else root.PoolAI = factory(root.PoolPhysics, root.PoolRules);
@@ -10,7 +10,8 @@
     kids:   { name: '幼幼班', err: 8,   perr: 0.25, sims: 0, spin: false, pos: false, wild: 0.12, nearest: false, think: [900, 1600] },
     easy:   { name: '簡單',   err: 4,   perr: 0.12, sims: 0, spin: false, pos: false, wild: 0.04, nearest: true,  think: [900, 1800] },
     normal: { name: '普通',   err: 1.5, perr: 0.05, sims: 4, spin: false, pos: false, wild: 0,    nearest: false, think: [1200, 2200] },
-    hard:   { name: '困難',   err: 0.4, perr: 0.02, sims: 9, spin: true,  pos: true,  wild: 0,    nearest: false, think: [1500, 2500] }
+    hard:   { name: '困難',   err: 0.4, perr: 0.02, sims: 9, spin: true,  pos: true,  wild: 0,    nearest: false, think: [1500, 2500] },
+    myth:   { name: '神話', err: 0.06, perr: 0.004, sims: 16, spin: true, pos: true, wild: 0, nearest: false, deep: true, think: [2000, 3200] }
   };
 
   function segDist(px, py, ax, ay, bx, by) {
@@ -183,6 +184,7 @@
     var think = Math.round(L.think[0] + rng.next() * (L.think[1] - L.think[0]));
     var callMode = Rules.needCall(state) ? 'eight' : (Rules.needCallBall(state) ? 'ball' : null);
     function cl(pocket, id) { return callMode === 'eight' ? pocket : (callMode === 'ball' ? { pocket: pocket, cb: id } : null); }
+    function cl2(st, cand) { return Rules.needCall(st) ? cand.pocket : (Rules.needCallBall(st) ? { pocket: cand.pocket, cb: cand.target } : null); }
     function noisy(dir, power) {
       var err = (rng.next() * 2 - 1) * L.err;
       var pw = power * (1 + (rng.next() * 2 - 1) * L.perr);
@@ -213,18 +215,37 @@
         var n = noisy(pick.dir, powerFor(pick, level === 'kids' ? 1.15 : 1.1));
         shot = mkShot(n.dir, n.power, 0, 0, spot, cl(pick.pocket, pick.target));
       } else {
-        var best = null, bs = -1e12;
+        var best = null, bs = -1e12, pool2 = [];
         var K = Math.min(L.sims, cands.length);
         for (i = 0; i < K; i++) {
           var c = cands[i];
           var variants = [[1.05, 0, 0]];
           if (L.spin) variants = [[1.05, 0, 0], [1.3, 0, 0], [1.1, 0, 330], [1.1, 0, -330], [0.9, 0, 0]];
+          if (L.deep) variants = [[1.0, 0, 0], [1.1, 0, 0], [1.3, 0, 0], [1.6, 0, 0], [0.9, 0, 0], [1.1, 0, 330], [1.3, 0, 330], [1.1, 0, -330], [1.3, 0, -330], [1.1, 0, 480], [1.1, 0, -480], [1.2, 0, 40]];
           for (j = 0; j < variants.length; j++) {
             var v = variants[j];
             var sh = mkShot(c.dir, Math.min(1000, powerFor(c, v[0])), v[1], v[2], spot, cl(c.pocket, c.target));
             var sm = simulate(state, sh);
             var sco = scoreOutcome(state, sm, me, L) - c.diff * 4;
+            if (L.deep) pool2.push({ c: c, v: v, sh: sh, sm: sm, sco: sco });
             if (sco > bs) { bs = sco; best = { c: c, v: v, sh: sh }; }
+          }
+        }
+        if (L.deep && pool2.length) {                 // 神話：把前幾名的打法再往後預演一桿（打進後下一桿好不好打）
+          pool2.sort(function (x, y) { return y.sco - x.sco; });
+          var top = pool2.slice(0, 5), bt = -1e12;
+          for (i = 0; i < top.length; i++) {
+            var tp = top[i], ns2 = tp.sm.info.state, total = tp.sco;
+            if (ns2.turn === me && ns2.phase === 'play' && !ns2.hand && !tp.sm.info.fouls.length) {
+              var nc = potCandidates(ns2, ns2.balls[0]), nb = -1e12;
+              for (j = 0; j < Math.min(3, nc.length); j++) {
+                var sh4 = mkShot(nc[j].dir, Math.min(1000, powerFor(nc[j], 1.1)), 0, 0, null, cl2(ns2, nc[j]));
+                var v4 = scoreOutcome(ns2, simulate(ns2, sh4), me, L) - nc[j].diff * 4;
+                if (v4 > nb) nb = v4;
+              }
+              total += 0.55 * (nb > -1e11 ? nb : -150);
+            }
+            if (total > bt) { bt = total; best = { c: tp.c, v: tp.v, sh: tp.sh }; }
           }
         }
         // 輸入誤差在決定之後才加（讓高難度偶有失誤、但不離譜）

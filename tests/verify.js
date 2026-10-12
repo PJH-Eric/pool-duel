@@ -174,6 +174,8 @@ section('AI');
     const N = 10; let hw = 0, ew = 0;
     for (let i = 1; i <= N; i++) { const r = play('score', 'hard', 'easy', i); if (r.s.winner === r.s.turn || r.s.winner === (r.s.scores[0] > r.s.scores[1] ? 0 : 1)) { } const w = r.s.winner; const hardSeat = 0; if (w === hardSeat) hw++; }
     ok(hw >= N * 0.7, `14-1：困難 AI 對簡單 AI 贏 ${hw}/${N}（≥70%）`);
+    let mw = 0; for (let i = 1; i <= N; i++) { const sw = i % 2, lv = sw ? ['hard', 'myth'] : ['myth', 'hard']; const r = play('score', lv[0], lv[1], i); if (r.s.winner === (sw ? 1 : 0)) mw++; }
+    ok(mw >= N * 0.7, `14-1：神話 AI 對困難 AI 贏 ${mw}/${N}（≥70%）`);
   }
 }
 
