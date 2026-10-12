@@ -204,7 +204,7 @@
         c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) c.lineTo(pts[i][0], pts[i][1]); c.closePath();
         c.fillStyle = felt.cushion; c.fill(); c.strokeStyle = felt.cushionDark; c.lineWidth = 2.5; c.stroke();
       }
-      const bev = 30, cg2 = cg, sg2 = sg;
+      const bev = 24, cg2 = cg - 16, sg2 = sg - 16;
       cushion([[cg2, 0], [W / 2 - sg2, 0], [W / 2 - sg2 + bev, -CUSH], [cg2 - bev, -CUSH]]);
       cushion([[W / 2 + sg2, 0], [W - cg2, 0], [W - cg2 + bev, -CUSH], [W / 2 + sg2 - bev, -CUSH]]);
       cushion([[cg2, H], [W / 2 - sg2, H], [W / 2 - sg2 + bev, H + CUSH], [cg2 - bev, H + CUSH]]);
@@ -235,11 +235,11 @@
       c.save(); c.beginPath(); c.rect(-FR, -FR, ow, oh); c.rect(0, 0, W, H); c.clip('evenodd');
       P.POCKETS.forEach(p => {
         const rd = p.hr * (state.pocketScale || 1), sx = p.hx, sy = p.hy;
-        const bg = c.createLinearGradient(sx - rd, sy - rd, sx + rd, sy + rd); bg.addColorStop(0, '#9a7a46'); bg.addColorStop(0.5, '#5c4222'); bg.addColorStop(1, '#2e1d0d');
-        c.fillStyle = 'rgba(0,0,0,0.5)'; c.beginPath(); c.arc(sx, sy + 1.5, rd + 9.5, 0, TWO_PI); c.fill();
-        c.fillStyle = bg; c.beginPath(); c.arc(sx, sy, rd + 5, 0, TWO_PI); c.fill();
-        c.fillStyle = '#050302'; c.beginPath(); c.arc(sx, sy, rd + 2.5, 0, TWO_PI); c.fill();
-        c.strokeStyle = 'rgba(255,200,150,0.12)'; c.lineWidth = 1.2; c.beginPath(); c.arc(sx, sy, rd + 7.5, Math.PI * 0.9, Math.PI * 1.6); c.stroke();
+        const bg = c.createLinearGradient(sx - rd, sy - rd, sx + rd, sy + rd); bg.addColorStop(0, '#4a3624'); bg.addColorStop(0.5, '#2c1d10'); bg.addColorStop(1, '#170d07');
+        c.fillStyle = 'rgba(0,0,0,0.35)'; c.beginPath(); c.arc(sx, sy + 1, rd + 4.5, 0, TWO_PI); c.fill();
+        c.fillStyle = bg; c.beginPath(); c.arc(sx, sy, rd + 3.5, 0, TWO_PI); c.fill();
+        c.fillStyle = '#050302'; c.beginPath(); c.arc(sx, sy, rd + 2, 0, TWO_PI); c.fill();
+        c.strokeStyle = 'rgba(255,200,150,0.06)'; c.lineWidth = 1.2; c.beginPath(); c.arc(sx, sy, rd + 7.5, Math.PI * 0.9, Math.PI * 1.6); c.stroke();
       });
       c.restore();
       // 袋口
