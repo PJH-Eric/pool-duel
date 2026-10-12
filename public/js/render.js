@@ -45,6 +45,7 @@
     if (dy > 1e-9) { const t = (H - R - cue.y) / dy; if (t < tw) { tw = t; wall = 'y'; } } else if (dy < -1e-9) { const t = (R - cue.y) / dy; if (t < tw) { tw = t; wall = 'y'; } }
     if (hit && best < tw) {
       const gx = cue.x + dx * best, gy = cue.y + dy * best;
+      out.hitId = hit.id;
       out.ghost = { x: gx, y: gy };
       out.path = [{ x: cue.x, y: cue.y }, { x: gx, y: gy }];
       const nx = (hit.x - gx) / (2 * R), ny = (hit.y - gy) / (2 * R);
@@ -377,6 +378,7 @@
       const L = 760, a = R + 8 + cue.pull, ang = Math.atan2(cue.dy, cue.dx);
       g.save(); applyTableTransform(g);
       g.translate(cue.x, cue.y); g.rotate(ang);
+      if (cue.off) g.translate(0, cue.off);            // 側旋：球桿尖端偏到母球左／右側
       if (cue.alpha != null) g.globalAlpha = cue.alpha;
       const hw = d => 3.6 + (8.6 - 3.6) * (d / L);
       function seg(d0, d1, fill) {
@@ -423,6 +425,7 @@
           const px = p.x + (p.corner ? (p.x ? 8 : -8) : 0), py = p.y + (p.corner ? (p.y ? 8 : -8) : (p.y ? 12 : -12));
           if (pc.selectable) {
             if (pc.selected === i) { ring(px, py, 44, 'rgba(255,214,102,0.95)', 5); const q = toScreen(px, py); g.fillStyle = 'rgba(255,214,102,0.22)'; g.beginPath(); g.arc(q.x, q.y, 44 * state.s, 0, TWO_PI); g.fill(); }
+            else if (pc.flash && now - pc.flash < 1400) { const k = Math.abs(Math.sin((now - pc.flash) / 1400 * Math.PI * 4)); ring(px, py, 44 + 6 * k, 'rgba(255,120,90,' + (0.5 + 0.5 * k) + ')', 5 + 3 * k); }
             else ring(px, py, 44, 'rgba(255,214,102,' + (0.55 + 0.35 * Math.sin(t * 4)) + ')', 3.6, [9, 8]);
           } else if (pc.selected === i) ring(px, py, 44, 'rgba(255,214,102,0.9)', 4);
         });
@@ -431,6 +434,7 @@
       const bl = sc.balls;
       if (sc.aim) {
         const A = sc.aim;
+        if (A.lines.jumpUnneeded) { const q = toScreen(A.lines.jump.to.x, A.lines.jump.to.y); g.save(); g.font = '800 ' + Math.max(12, 15 * state.s) + 'px "Noto Sans TC", system-ui, sans-serif'; g.textAlign = 'center'; g.fillStyle = 'rgba(255,214,102,0.95)'; g.strokeStyle = 'rgba(0,0,0,0.7)'; g.lineWidth = 3; g.strokeText('前面沒擋球，不用跳', q.x, q.y - R * state.s * 1.8); g.fillText('前面沒擋球，不用跳', q.x, q.y - R * state.s * 1.8); g.restore(); }
         if (A.lines.jump) {                           // 跳桿：飛行段畫成拱形虛線，落點畫黃色圈
           const J = A.lines.jump, a = toScreen(J.from.x, J.from.y), b2 = toScreen(J.to.x, J.to.y);
           const mx = (a.x + b2.x) / 2, my = (a.y + b2.y) / 2 - Math.hypot(b2.x - a.x, b2.y - a.y) * 0.22;
@@ -454,6 +458,10 @@
           let sc2 = 1, lift = 0;
           if (b.air > 0 && b.air0 > 0) { const f = 1 - b.air / b.air0, hh = 4 * f * (1 - f); sc2 = 1 + 0.28 * hh; lift = hh * R * state.s * 2.2; }
           drawBall(b, sc2, sc.hand && !sc.hand.ok ? 0.55 : null, lift);
+          if (sc.cueDot && (Math.abs(sc.cueDot.u) + Math.abs(sc.cueDot.v) > 0.01)) {       // 擊球點：母球上的紅點（俯視：上旋偏前、下旋偏後、側旋偏左右）
+            const D = sc.cueDot, k = R * 0.62, qx = b.x + D.dx * (-D.v) * k - D.dy * D.u * k, qy = b.y + D.dy * (-D.v) * k + D.dx * D.u * k, q = toScreen(qx, qy);
+            g.save(); g.fillStyle = '#e0302a'; g.strokeStyle = 'rgba(255,255,255,0.9)'; g.lineWidth = 1.6; g.beginPath(); g.arc(q.x, q.y - lift, Math.max(2.4, R * 0.26 * state.s), 0, TWO_PI); g.fill(); g.stroke(); g.restore();
+          }
         }
       }
       // 進袋動畫

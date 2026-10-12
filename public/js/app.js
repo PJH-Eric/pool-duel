@@ -11,6 +11,7 @@
   /* ---------- 小工具 ---------- */
   let gtT = 0;
   App.toast = function (text, ms) {
+    if (App.screen === 'game' && App.game && App.game.ui && App.game.ui.toast) { App.game.ui.toast(text); return; }   // 對局中提示一律顯示在桌面上方
     const el = $('#globalToast'); el.textContent = text; el.classList.add('show');
     clearTimeout(gtT); gtT = setTimeout(() => el.classList.remove('show'), ms || 2600);
   };
@@ -286,13 +287,12 @@
   };
 
   const seatHtml = (s, mini) => {
-    const balls = (s.balls || []).map(b => miniBall(b.id, b.out)).join('');
     return '<div class="avatar s' + s.seat + (mini ? ' sm' : '') + '" aria-hidden="true">' + esc(firstChar(s.name)) + '</div>';
   };
-  function miniBall(id, out) {
+  function miniBall(id, out, next) {
     const col = Themes.ballColor(id);
     const style = id >= 9 ? 'background:linear-gradient(' + col + ' 0 28%,#f6f1e4 28% 72%,' + col + ' 72%)' : 'background:' + col;
-    return '<span class="mini-ball' + (out ? ' out' : '') + '" style="' + style + '" title="' + id + ' 號"><b>' + id + '</b></span>';
+    return '<span class="mini-ball' + (out ? ' out' : '') + (next ? ' next' : '') + '" style="' + style + '" title="' + id + ' 號"><b>' + id + '</b></span>';
   }
   App.ui = {
     hud(vm) {
@@ -305,7 +305,7 @@
         const tag = s.you ? '<span class="tag">你</span>' : '';
         const right = vm.kind === 'score' ? '<span class="pscore">' + s.score + '</span>' : '';
         html += '<div class="pseat' + (s.isTurn ? ' turn' : '') + '">' + seatHtml(s) + '<div><div class="pname"><span class="n">' + esc(s.name) + '</span>' + tag + right + '</div><div class="pline">' + esc(s.line1) + (s.line2 && vm.kind !== 'score' ? ' ・ ' + esc(s.line2) : '') + '</div></div>' +
-          '<div class="pballs">' + (s.balls || []).map(b => miniBall(b.id, b.out)).join('') + '</div></div>';
+          '<div class="pballs">' + (s.balls || []).map(b => miniBall(b.id, b.out, b.next)).join('') + '</div></div>';
         cap += '<div class="capsule' + (s.isTurn ? ' turn' : '') + '">' + seatHtml(s, true) + '<div style="min-width:0"><div class="cn">' + esc(s.name) + (s.you ? '（你）' : '') + '</div><div class="cl">' + (vm.kind === 'score' ? s.score + ' 分' : esc(s.line1)) + '</div></div></div>';
       });
       $('#gSeats').innerHTML = html; $('#gCapsules').innerHTML = cap;
@@ -342,7 +342,15 @@
     [$('#spinDot'), $('#spinMini i')].forEach(d => { d.style.left = l; d.style.top = t; });
   }
   const MODE_NOTE = { follow: '推桿：碰到球後，母球會繼續往前追', stop: '定桿：正撞時，母球會停在原地', draw: '拉桿：碰到球後，母球會往回縮', jump: '跳桿：母球會飛過黃色圈前面的球再落地（力度越大飛越遠）' };
-  function syncCueModes() { const m = App.game && App.game.cueMode ? App.game.cueMode() : null; $$('#cueModes button').forEach(b => b.setAttribute('aria-pressed', b.dataset.mode === m ? 'true' : 'false')); }
+  const MODE_NAME = { follow: '推桿', stop: '定桿', draw: '拉桿', jump: '跳桿' };
+  const smallScreen = () => matchMedia('(max-aspect-ratio: 1/1), (max-width: 820px), (max-height: 520px)').matches;
+  function placeModes() {            // 小螢幕：四顆出桿按鈕收進擊球點面板；大螢幕：放在擊球點旁
+    const box = $('#cueModes'), pop = $('#spinPop'), ctl = document.querySelector('.spin-ctl');
+    if (smallScreen()) { if (box.parentNode !== pop) pop.insertBefore(box, pop.querySelector('.spin-tip')); }
+    else if (box.parentNode !== ctl) ctl.appendChild(box);
+  }
+  window.addEventListener('resize', placeModes); placeModes();
+  function syncCueModes() { const m = App.game && App.game.cueMode ? App.game.cueMode() : null; $$('#cueModes button').forEach(b => b.setAttribute('aria-pressed', b.dataset.mode === m ? 'true' : 'false')); const lb = document.querySelector('#spinBtn .lbl'); if (lb) lb.textContent = m ? MODE_NAME[m] : '擊球點'; }
   $$('#cueModes button').forEach(b => { b.onclick = () => { const g = App.game; if (!g) return; g.setCueMode(b.dataset.mode); const m = g.cueMode(); if (m && g.ui.toast) g.ui.toast(MODE_NOTE[m]); }; });
   function setSpinOpen(open) { $('#spinPop').classList.toggle('hidden', !open); $('#spinBtn').setAttribute('aria-expanded', open ? 'true' : 'false'); }
   $('#spinBtn').onclick = () => setSpinOpen($('#spinPop').classList.contains('hidden'));
@@ -372,7 +380,7 @@
   const relayout = () => setTimeout(() => window.dispatchEvent(new Event('resize')), 30);
   function openDrawer() { if (isSideLayout()) { gMain().classList.remove('collapsed'); relayout(); } else $('#gPanel').classList.add('open'); unread = 0; updateUnread(); }
   function closeDrawer() { if (isSideLayout()) { gMain().classList.add('collapsed'); relayout(); } else $('#gPanel').classList.remove('open'); }
-  function resetDrawer() { $('#gPanel').classList.remove('open'); gMain().classList.remove('collapsed'); }
+  function resetDrawer() { $('#gPanel').classList.remove('open'); gMain().classList.toggle('collapsed', isSideLayout() && matchMedia('(max-height: 520px)').matches); relayout(); }   // 手機橫向：預設收起資訊欄
   $('#gDrawer').onclick = () => { if (isSideLayout()) return gMain().classList.contains('collapsed') ? openDrawer() : closeDrawer(); return $('#gPanel').classList.contains('open') ? closeDrawer() : openDrawer(); };
   $('#gPanelClose').onclick = closeDrawer;
   function updateUnread() {

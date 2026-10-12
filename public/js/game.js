@@ -110,8 +110,8 @@
           o.line1 = g ? (g === 'solid' ? '全色球 1~7' : '半色球 9~15') : '尚未分花色';
           if (g) {
             const ids = g === 'solid' ? [1, 2, 3, 4, 5, 6, 7] : [9, 10, 11, 12, 13, 14, 15];
-            o.balls = ids.map(id => ({ id, out: Rules.getBall(s, id).pocket >= 0 }));
             const left = ids.filter(id => Rules.getBall(s, id).pocket < 0).length;
+            o.balls = ids.map(id => ({ id, out: Rules.getBall(s, id).pocket >= 0 })).concat([{ id: 8, out: Rules.getBall(s, 8).pocket >= 0, next: left === 0 }]);
             o.line2 = left === 0 ? '只剩 8 號球' : '剩 ' + left + ' 顆';
           }
         } else if (kind === 'score') {
@@ -119,7 +119,7 @@
         } else {
           const t = Rules.onTable(s).map(b => b.id), m = t.length ? Math.min.apply(null, t) : 0;
           o.line1 = '9 號球進袋者勝'; o.line2 = '最小的球：' + m + ' 號';
-          o.balls = [1, 2, 3, 4, 5, 6, 7, 8, 9].map(id => ({ id, out: Rules.getBall(s, id).pocket >= 0 }));
+          o.balls = [1, 2, 3, 4, 5, 6, 7, 8, 9].map(id => ({ id, out: Rules.getBall(s, id).pocket >= 0, next: id === m }));
         }
         seats.push(o);
       }
@@ -269,7 +269,7 @@
     shoot() {
       if (this.phase !== 'aiming') return false;
       if (this.hand && !this.hand.ok) { this.ui.toast && this.ui.toast('母球的位置不合法'); return false; }
-      if (Rules.needCall(this.state) && this.call < 0) { this.ui.toast && this.ui.toast('請先點選 8 號球要進的袋口'); return false; }
+      if (Rules.needCall(this.state) && this.call < 0) { this.ui.toast && this.ui.toast('請先點選 8 號球要進的袋口'); this.flashT = performance.now(); return false; }
       const shot = this.buildShot();
       const err = Rules.validateShot(this.state, shot);
       if (err) { this.ui.toast && this.ui.toast(err); return false; }
@@ -363,10 +363,17 @@
       const aimMode = this.cfg.mode === 'online' ? this.cfg.aimMode : this.store.get('aim');
       if (cueOk && this.phase === 'aiming') {
         const d = this.aimDir(), cp = { x: cue.x, y: cue.y };
-        sc.cue = { show: true, x: cp.x, y: cp.y, dx: d.dx, dy: d.dy, pull: 8 + this.power * 70, skin: this.mySkin() };
-        if (aimMode !== 'off') sc.aim = { lines: this.r.aimLines(balls, cp, d.dx, d.dy, aimMode, -this.spin.v, this.jump ? C.JUMP_MIN + C.JUMP_K * this.power : 0) };
+        sc.cue = { show: true, x: cp.x, y: cp.y, dx: d.dx, dy: d.dy, pull: 8 + this.power * 70, skin: this.mySkin(), off: this.spin.u * C.R * 0.7 };
+        sc.cueDot = { u: this.spin.u, v: this.spin.v, dx: d.dx, dy: d.dy };
+        if (aimMode !== 'off') {
+          sc.aim = { lines: this.r.aimLines(balls, cp, d.dx, d.dy, aimMode, -this.spin.v, this.jump ? C.JUMP_MIN + C.JUMP_K * this.power : 0) };
+          if (this.jump) {                                // 跳桿提示：直線上第一個碰到的球若本來就是合法目標，就不需要跳
+            const st = this.r.aimLines(balls, cp, d.dx, d.dy, 'short', 0, 0), legal = Rules.legalFirstIds(s);
+            sc.aim.lines.jumpUnneeded = !st.hitId || legal.indexOf(st.hitId) >= 0;
+          }
+        }
         if (this.hand) sc.hand = { x: this.hand.x, y: this.hand.y, ok: this.hand.ok };
-        if (Rules.needCall(s)) sc.pocketCall = { selectable: true, selected: this.call };
+        if (Rules.needCall(s)) sc.pocketCall = { selectable: true, selected: this.call, flash: this.flashT || 0 };
       } else if (cueOk && this.phase === 'thinking') {
         const d = { dx: Math.cos(this.angle), dy: Math.sin(this.angle) };
         sc.cue = { show: true, x: cue.x, y: cue.y, dx: d.dx, dy: d.dy, pull: 10 + 8 * Math.sin(now / 160), skin: this.skinFor(s.turn) };
