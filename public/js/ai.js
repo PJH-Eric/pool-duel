@@ -254,10 +254,18 @@
             var sc2 = scoreOutcome(state, sm2, me, L) + (opts[i].clear ? 20 : 0);
             if (sc2 > bsS) { bsS = sc2; bestS = sh2; }
           }
+          if (L.spin && !opts[i].clear) {                // 困難電腦：被擋住時會試跳桿飛過去
+            var jp = [450, 650, 850];
+            for (j = 0; j < jp.length; j++) {
+              var sh3 = mkShot(opts[i].dir, jp[j], 0, 0, spot, pc); sh3.jump = 1;
+              var sc3 = scoreOutcome(state, simulate(state, sh3), me, L) + 5;
+              if (sc3 > bsS) { bsS = sc3; bestS = sh3; }
+            }
+          }
         }
         var base = bestS || mkShot({ x: 1, y: 0 }, 400, 0, 0, spot, pc);
         var n4 = noisy({ x: base.ax / 1e6, y: base.ay / 1e6 }, base.power);
-        shot = mkShot(n4.dir, n4.power, 0, 0, spot, pc);
+        shot = mkShot(n4.dir, n4.power, 0, 0, spot, pc); if (base.jump) shot.jump = 1;
       }
     }
     return { shot: shot, think: think };
