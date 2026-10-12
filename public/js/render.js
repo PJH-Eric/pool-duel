@@ -187,24 +187,13 @@
       c.save(); c.beginPath(); c.rect(-CUSH, -CUSH, W + 2 * CUSH, H + 2 * CUSH); c.clip();
       const pat = c.createPattern(noiseTile(), 'repeat'); c.globalAlpha = 0.9; c.fillStyle = pat; c.fillRect(-CUSH, -CUSH, W + 2 * CUSH, H + 2 * CUSH);
       c.restore();
-      // 袋口喉部：庫邊斜端與袋框之間用桌布同色填滿
-      c.save(); c.beginPath(); c.rect(-CUSH, -CUSH, W + 2 * CUSH, H + 2 * CUSH); c.rect(0, 0, W, H); c.clip('evenodd');
-      P.POCKETS.forEach(p => {
-        const rd = p.hr * (state.pocketScale || 1), R = rd + 44;
-        const R2 = R;
-        c.save(); c.beginPath(); c.arc(p.hx, p.hy, R2, 0, TWO_PI); c.clip();
-        c.fillStyle = fg; c.fillRect(-CUSH, -CUSH, W + 2 * CUSH, H + 2 * CUSH);
-        c.globalAlpha = 0.9; c.fillStyle = pat; c.fillRect(-CUSH, -CUSH, W + 2 * CUSH, H + 2 * CUSH);
-        c.restore();
-      });
-      c.restore();
       // 庫邊橡膠（梯形，靠袋口處斜切）
       const cg = C.CORNER_GAP, sg = C.SIDE_GAP;
       function cushion(pts) {
         c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) c.lineTo(pts[i][0], pts[i][1]); c.closePath();
         c.fillStyle = felt.cushion; c.fill(); c.strokeStyle = felt.cushionDark; c.lineWidth = 2.5; c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); c.lineTo(pts[1][0], pts[1][1]); c.stroke();
       }
-      const bev = 30, cg2 = cg, sg2 = sg;
+      const bev = 0, cg2 = 8, sg2 = 17; // 庫邊直接延伸進袋口（由黑洞蓋住），陰影與庫邊整合
       cushion([[cg2, 0], [W / 2 - sg2, 0], [W / 2 - sg2 + bev, -CUSH], [cg2 - bev, -CUSH]]);
       cushion([[W / 2 + sg2, 0], [W - cg2, 0], [W - cg2 + bev, -CUSH], [W / 2 + sg2 - bev, -CUSH]]);
       cushion([[cg2, H], [W / 2 - sg2, H], [W / 2 - sg2 + bev, H + CUSH], [cg2 - bev, H + CUSH]]);
