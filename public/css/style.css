@@ -72,6 +72,10 @@ button { font-family: inherit; }
 #heroCanvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .hero-shade { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(70% 55% at 50% 45%, rgba(10,5,3,.15), rgba(10,5,3,.72) 90%), linear-gradient(rgba(0,0,0,.45), rgba(0,0,0,.05) 40%, rgba(0,0,0,.6)); }
 #homeGear { position: absolute; top: calc(14px + env(safe-area-inset-top)); right: calc(16px + env(safe-area-inset-right)); z-index: 3; }
+/* 首頁左上角「回遊戲大廳」：與右上角設定鈕對稱；窄螢幕只留箭頭圖示 */
+#lobbyLink { position: absolute; top: calc(14px + env(safe-area-inset-top)); left: calc(16px + env(safe-area-inset-left)); z-index: 3; display: inline-flex; align-items: center; gap: 4px; height: 46px; min-height: 46px; padding: 0 16px 0 10px; border-radius: 23px; font-size: 16px; text-decoration: none; white-space: nowrap; }
+#lobbyLink .ico { width: 22px; height: 22px; }
+@media (max-width: 420px) { #lobbyLink { width: 46px; padding: 0; justify-content: center; } #lobbyLink .lobby-link-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } }
 .hero-body { position: relative; z-index: 2; margin: auto; text-align: center; padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .hero-eyebrow { letter-spacing: .5em; font-size: 14px; color: var(--brass-l); font-weight: 800; opacity: .9; }
 .hero-title { margin: 6px 0 0; font-size: clamp(54px, 11vw, 112px); line-height: 1.05; letter-spacing: .14em; font-weight: 900; background: linear-gradient(#fff3c8 10%, #f1be52 48%, #a8731a 92%); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 4px 0 rgba(60,30,5,.85)) drop-shadow(0 12px 22px rgba(0,0,0,.8)); }
