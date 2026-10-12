@@ -1,0 +1,10 @@
+/* 延遲徽章：放在設定齒輪旁邊 */
+.lat-slot { display: inline-flex; align-items: center; }
+.lat { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px 0 8px; border-radius: 15px; background: rgba(20,12,8,.72); border: 1px solid rgba(227,168,64,.28); color: #e9dcc2; font-size: 12px; font-weight: 700; letter-spacing: .02em; font-variant-numeric: tabular-nums; box-shadow: inset 0 1px 0 rgba(255,255,255,.06); }
+.lat .bars { display: inline-flex; align-items: flex-end; gap: 2px; height: 14px; }
+.lat .bars i { width: 3px; border-radius: 1px; background: rgba(255,255,255,.18); }
+.lat .bars i:nth-child(1) { height: 5px; } .lat .bars i:nth-child(2) { height: 8px; } .lat .bars i:nth-child(3) { height: 11px; } .lat .bars i:nth-child(4) { height: 14px; }
+.lat.good .bars i.on { background: #5ee08a; } .lat.ok .bars i.on { background: #f2c14b; } .lat.bad .bars i.on { background: #ff6b5e; }
+.lat.off { opacity: .6; }
+.lat.hidden { display: none; }
+@media (max-width: 520px) { .lat .ms-text { display: none; } .lat { padding: 0 8px; } }
