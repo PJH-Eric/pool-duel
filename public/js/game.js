@@ -44,6 +44,7 @@
         this.state = Rules.newGame(this.cfg.kind, { breaker: this.cfg.mode === 'ai' ? 0 : 0, kids: kids || this.cfg.mode === 'practice', bigPockets: !!this.cfg.bigPockets || kids }, this.rng);
         if (this.cfg.mode === 'ai' && this.cfg.breaker != null) { this.state.breaker = this.cfg.breaker; this.state.turn = this.cfg.breaker; this.state.hand.player = this.cfg.breaker; }
       }
+      this.r.setPocketScale(this.state.bigPockets ? C.POCKET_SCALE_BIG : 1);
       this.turnEnd = this.cfg.turnMs ? performance.now() + this.cfg.turnMs : 0;
       if (!this.running) { this.running = true; this.last = performance.now(); this.raf = requestAnimationFrame(t => this.frame(t)); }
       this.ui.result && this.ui.result(null); this.ui.choice && this.ui.choice(null);
@@ -231,6 +232,13 @@
         e.preventDefault();
       });
       cv.addEventListener('pointermove', e => {
+        if (!this.dragMode) {                              // 叫球：滑鼠移到可點的球或袋口時變成手指，不用十字
+          let hot = false;
+          if (this.phase === 'aiming' && (Rules.needCall(this.state) || Rules.needCallBall(this.state))) {
+            const q = this._pt(e); hot = this.r.pocketHit(q.px, q.py) >= 0 || (Rules.needCallBall(this.state) && this.ballHit(q.px, q.py) > 0);
+          }
+          cv.classList.toggle('hot', hot);
+        }
         if (!this.dragMode || this.phase !== 'aiming') return;
         const { px, py } = this._pt(e), t = this.r.toTable(px, py);
         if (this.dragMode === 'hand') {

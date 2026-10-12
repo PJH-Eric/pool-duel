@@ -26,7 +26,7 @@
     [W / 2 - SG, -JR], [W / 2 + SG, -JR], [W / 2 - SG, H + JR], [W / 2 + SG, H + JR]
   ];
 
-  function capRadius(p, scale) { return (p.hr + C.CAP_MARGIN) * scale; }
+  function capRadius(p, scale) { return p.hr * scale + C.CAP_MARGIN; }
 
   function makeWorld(balls, opts) {
     opts = opts || {};

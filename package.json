@@ -1,7 +1,7 @@
 {
   "name": "pool-duel",
   "version": "1.0.0",
-  "description": "撞球對決：簡化九球／八號球／14-1 連續進球，單機對電腦與線上 1 對 1（含觀戰）",
+  "description": "撞球對決：簡化九球／八號球／搶分賽，單機對電腦與線上 1 對 1（含觀戰）",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

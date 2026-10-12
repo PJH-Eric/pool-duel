@@ -79,6 +79,7 @@
       table: null, scene: null, noise: null, rolls: {}, lut: null, sprites: {}
     };
 
+    function setPocketScale(k) { k = k || 1; if (state.pocketScale !== k) { state.pocketScale = k; state.table = null; } }
     function setTheme(t) { Object.assign(state.theme, t || {}); state.table = null; state.scene = null; }
 
     function resize() {
@@ -204,7 +205,7 @@
       [[cg, 0, W / 2 - sg, 0], [W / 2 + sg, 0, W - cg, 0], [cg, H, W / 2 - sg, H], [W / 2 + sg, H, W - cg, H], [0, cg, 0, H - cg], [W, cg, W, H - cg]].forEach(l => { c.beginPath(); c.moveTo(l[0], l[1]); c.lineTo(l[2], l[3]); c.stroke(); });
       // 袋口
       P.POCKETS.forEach((p, i) => {
-        const rad = p.hr, sx = p.hx, sy = p.hy;
+        const rad = p.hr * (state.pocketScale || 1), sx = p.hx, sy = p.hy;
         const rim = c.createRadialGradient(sx, sy, rad * 0.7, sx, sy, rad + 8); rim.addColorStop(0, '#5a2d14'); rim.addColorStop(0.6, '#7a4220'); rim.addColorStop(1, 'rgba(60,30,10,0)');
         c.fillStyle = rim; c.beginPath(); c.arc(sx, sy, rad + 8, 0, TWO_PI); c.fill();
         const hole = c.createRadialGradient(sx - 4, sy - 4, 2, sx, sy, rad); hole.addColorStop(0, '#1b1511'); hole.addColorStop(1, '#030201');
@@ -477,7 +478,7 @@
     }
 
     resize();
-    return { resize, setTheme, draw, toScreen, toTable, vecToScreen, state, FR, aimLines,
+    return { resize, setTheme, setPocketScale, draw, toScreen, toTable, vecToScreen, state, FR, aimLines,
       pocketHit(px, py) {
         const t = toTable(px, py);
         let best = -1, bd = 1e9;
