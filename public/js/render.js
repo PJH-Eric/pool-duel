@@ -429,6 +429,7 @@
           } else if (pc.selected === i) ring(px, py, 44, 'rgba(255,214,102,0.9)', 4);
         });
       }
+      if (sc.callBall) ring(sc.callBall.x, sc.callBall.y, R + 9, 'rgba(255,214,102,0.95)', 4);
       // 瞄準線（畫在球下面）
       const bl = sc.balls;
       if (sc.aim) {

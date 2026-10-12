@@ -16,12 +16,11 @@
   <section id="screen-home" class="screen active" aria-label="首頁">
     <canvas id="heroCanvas" aria-hidden="true"></canvas>
     <div class="hero-shade"></div>
-    <a id="lobbyLink" class="btn gold lobby-link" href="https://pjh-eric.github.io/game-lobby/" aria-label="回遊戲大廳"><span class="ico ico-back"></span><span class="lobby-link-text">回遊戲大廳</span></a>
     <button id="homeGear" class="btn round gear" aria-label="設定"><span class="ico ico-gear"></span></button>
     <div class="hero-body">
       <div class="hero-eyebrow">POOL DUEL</div>
       <h1 class="hero-title">撞球對決</h1>
-      <p class="hero-sub">簡化九球 ・ 八號球 ・ 搶分賽</p>
+      <p class="hero-sub">簡化九球 ・ 八號球 ・ 14-1 連續進球</p>
       <div class="hero-menu">
         <button id="btnSolo" class="btn gold big">一個人玩</button>
         <button id="btnOnline" class="btn big">跟別人玩</button>
@@ -129,6 +128,7 @@
         <div id="toast" class="toast" role="status" aria-live="polite"></div>
         <div id="dcBanner" class="dc-banner hidden"></div>
         <button id="btnRack" class="btn small rack-btn hidden">重新擺球</button>
+        <button id="btnSafety" class="btn small safety-btn hidden" aria-pressed="false" title="宣告安全球：不用叫球，這桿不計分也不扣分">安全球</button>
       </div>
     </div>
     <footer id="gControls" class="g-controls">

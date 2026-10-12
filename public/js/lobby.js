@@ -5,7 +5,7 @@
   const Net = root.Net, Store = root.Store, Sound = root.Sound, Nick = root.Nicknames;
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const firstChar = n => Array.from(String(n || '?'))[0] || '?';
-  const KIND_NAME = { nine: '簡化九球', eight: '八號球', score: '搶分賽' };
+  const KIND_NAME = { nine: '簡化九球', eight: '八號球', score: '14-1 連續進球' };
   const QUICK = ['加油！', '好球！', '好險！', '哈哈', '再一局', '謝謝', '掰掰'];
   const L = {
     room: null, rooms: [], pendingInvite: null, awaitJoin: 0, wasInRoom: false, lastChatAt: 0, dcEnd: 0, dcTimer: 0,
@@ -138,7 +138,7 @@
     opts.forEach(o => { const b = document.createElement('button'); b.type = 'button'; b.className = 'seg-b'; b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', String(o[0]) === String(cur) ? 'true' : 'false'); b.textContent = o[1]; b.onclick = () => onPick(o[0]); el.appendChild(b); });
   }
   const OPT = {
-    kind: [['nine', '九球'], ['eight', '八號球'], ['score', '搶分賽']],
+    kind: [['nine', '九球'], ['eight', '八號球'], ['score', '14-1']],
     turnSec: [[30, '30 秒'], [45, '45 秒'], [60, '60 秒'], [0, '不限']],
     aim: [['full', '完整'], ['short', '簡短'], ['off', '關閉']],
     pockets: [['standard', '標準'], ['big', '加大']]

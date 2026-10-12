@@ -1,4 +1,4 @@
-/* 規則核心：九球 / 八號球（正式）/ 搶分賽。單機、線上伺服器、電腦模擬共用。
+/* 規則核心：九球 / 八號球（正式）/ 14-1 連續進球（內部代號 score）。單機、線上伺服器、電腦模擬共用。
    純資料進、純資料出：state 是可 JSON 序列化的物件。 */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory(require('./physics.js'));
@@ -8,9 +8,9 @@
   var C = P.C, R = C.R, W = C.W, H = C.H;
   var FOUL_TEXT = {
     scratch: '母球落袋', nocontact: '沒有碰到任何球', wrongfirst: '先碰到不該碰的球',
-    norail: '碰球後沒有球進袋、也沒有球碰庫', timeout: '回合超時', breakfail: '開球沒有達標'
+    norail: '碰球後沒有球進袋、也沒有球碰庫', timeout: '回合超時', breakfail: '開球沒有達標', nocall: '沒有叫球'
   };
-  var KIND_NAME = { nine: '簡化九球', eight: '八號球', score: '搶分賽' };
+  var KIND_NAME = { nine: '簡化九球', eight: '八號球', score: '14-1 連續進球' };
 
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
   function other(p) { return 1 - p; }
@@ -30,7 +30,7 @@
     return {
       kind: kind, balls: balls, turn: breaker, breaker: breaker, phase: 'play',
       isBreak: true, hand: { player: breaker, behindHead: true },
-      groups: [null, null], scores: [0, 0], pending: null, winner: null, reason: '',
+      groups: [null, null], scores: [0, 0], target: [15, 30, 60].indexOf(opts.target) >= 0 ? opts.target : 30, pending: null, winner: null, reason: '',
       kids: !!opts.kids, bigPockets: !!opts.bigPockets, shotNo: 0, rackNo: 1, last: null
     };
   }
@@ -70,6 +70,34 @@
   function needCall(s) {
     return s.kind === 'eight' && !s.isBreak && s.phase === 'play' && s.groups[s.turn] != null &&
       ownLeft(s, s.turn) === 0 && !!getBall(s, 8) && getBall(s, 8).pocket < 0;
+  }
+
+  // 14-1：非開球、非幼幼班的每一桿都要「叫球」（點球＋點袋口），或宣告安全球
+  function needCallBall(s) {
+    return s.kind === 'score' && !s.kids && !s.isBreak && s.phase === 'play';
+  }
+  // 14-1 重新排球：14 顆已進袋的球重排成三角形（頂點空著），剩下的 1 顆留在原處
+  function rerack14(s) {
+    var left = onTable(s);
+    if (left.length > 1) return false;
+    var slots = (function () {
+      var out = [], dxr = Math.sqrt(3) * R + 0.05, dy = 2 * R + 0.05, widths = [1, 2, 3, 4, 5];
+      for (var r = 0; r < 5; r++) for (var k = 0; k < widths[r]; k++) out.push({ x: C.FOOT_X + r * dxr, y: C.CENTER_Y + (k - (widths[r] - 1) / 2) * dy });
+      return out;
+    })();
+    var keep = left[0] || null, cue = s.balls[0];
+    var skipApex = !!keep;
+    var use = skipApex ? slots.slice(1) : slots;
+    var near = function (b, sl) { var dx = b.x - sl.x, dy = b.y - sl.y; return dx * dx + dy * dy < (2 * R + 1) * (2 * R + 1); };
+    if (keep && use.some(function (sl) { return near(keep, sl); })) { keep.x = C.FOOT_X; keep.y = C.CENTER_Y; }
+    var ids = s.balls.filter(function (b) { return b.id > 0 && (!keep || b.id !== keep.id); }).map(function (b) { return b.id; });
+    ids.forEach(function (id, i) { var b = getBall(s, id); b.x = use[i].x; b.y = use[i].y; b.pocket = -1; });
+    if (cue.pocket < 0 && use.some(function (sl) { return near(cue, sl); })) {
+      var sp = nearestValidCue({ balls: s.balls, hand: { behindHead: true }, bigPockets: s.bigPockets }, C.HEAD_X, C.CENTER_Y);
+      cue.x = sp.x; cue.y = sp.y;
+    }
+    s.rackNo++;
+    return true;
   }
 
   // ---------- 母球擺放 ----------
@@ -121,6 +149,11 @@
     }
     if (needCall(s)) {
       if (!(shot.call >= 0 && shot.call <= 5 && shot.call === Math.round(shot.call))) return '請先指定 8 號球的袋口';
+    }
+    if (needCallBall(s) && shot.safety !== 1) {
+      var cb = getBall(s, shot.cb);
+      if (!cb || cb.pocket >= 0 || cb.id < 1) return '請先點選要打的球';
+      if (!(shot.call >= 0 && shot.call <= 5 && shot.call === Math.round(shot.call))) return '請再點選這顆球要進的袋口';
     }
     return null;
   }
@@ -182,17 +215,33 @@
         info.continued = !foul && pocketedObj.length > 0;
       }
     }
-    // ===== 搶分 =====
+    // ===== 14-1 連續進球 =====
     else if (s.kind === 'score') {
-      var pts = 0; pocketedObj.forEach(function (id) { pts += id; });
-      s.scores[me] += pts;
-      if (scratch && !s.kids) s.scores[me] = Math.max(0, s.scores[me] - 2);
-      info.continued = !foul && pocketedObj.length > 0;
-      if (s.scores[me] >= 61) finish(me, 'score');
-      else if (onTable(s).length === 0) {
-        if (s.scores[0] === s.scores[1]) finish(-1, 'draw');
-        else finish(s.scores[0] > s.scores[1] ? 0 : 1, 'score');
+      var called = needCallBall(s0) && shot.safety !== 1;
+      var safety = needCallBall(s0) && shot.safety === 1;
+      var made = false, pts = 0;
+      if (s.kids) {
+        pts = pocketedObj.length; s.scores[me] += pts;
+        info.continued = pts > 0;
+      } else if (foul) {
+        // 犯規：扣 1 分，這桿進袋的球全部歸位、不計分
+        pocketedObj.forEach(respot);
+        s.scores[me] -= 1; info.penalty = 1;
+      } else if (safety) {
+        pocketedObj.forEach(respot);
+        info.safety = true;
+      } else {
+        if (called) {
+          made = res.pocketed.some(function (p) { return p.id === shot.cb && p.pocket === shot.call; });
+          info.called = { ball: shot.cb, pocket: shot.call };
+        } else made = pocketedObj.length > 0;    // 開球：進幾顆算幾分
+        if (made) { pts = pocketedObj.length; s.scores[me] += pts; info.continued = true; }
+        else pocketedObj.forEach(respot);          // 叫的球沒進指定袋口：其他進袋的球歸位、不計分
+        info.missedCall = called && !made;
       }
+      info.made = made; info.pts = pts;
+      if (s.scores[me] >= s.target) finish(me, 'score');
+      else if (onTable(s).length <= 1 && rerack14(s)) info.reracked = true;
     }
     // ===== 八號球 =====
     else {
@@ -247,7 +296,7 @@
     }
     if (foul && !s.kids && s.phase === 'play' && !s.hand) cueToHand(opp, false);
     s.isBreak = wasBreak && info.pending ? s.isBreak : false;
-    s.last = { player: me, fouls: info.fouls, pocketed: pocketedObj, scratch: scratch, continued: info.continued, eightLoss: info.eightLoss || null };
+    s.last = { player: me, fouls: info.fouls, pocketed: pocketedObj, scratch: scratch, continued: info.continued, eightLoss: info.eightLoss || null, pts: info.pts || 0, safety: !!info.safety, made: !!info.made, penalty: info.penalty || 0, reracked: !!info.reracked, called: info.called || null };
     info.state = s;
     return info;
   }
@@ -257,6 +306,7 @@
     var s = clone(s0), me = s.turn, opp = other(me);
     if (s.phase === 'choice') return resolveChoice(s, defaultChoice(s), null);
     s.shotNo++;
+    if (s.kind === 'score' && !s.kids) s.scores[me] -= 1;
     s.turn = opp;
     var wasBreak = s.isBreak;
     if (wasBreak) { s.breaker = opp; s.hand = { player: opp, behindHead: true }; }
@@ -314,7 +364,7 @@
 
   // 另一局：換開球者
   function nextGame(prev, rng) {
-    return newGame(prev.kind, { breaker: other(prev.breaker), kids: prev.kids, bigPockets: prev.bigPockets }, rng);
+    return newGame(prev.kind, { breaker: other(prev.breaker), kids: prev.kids, bigPockets: prev.bigPockets, target: prev.target }, rng);
   }
 
   function describe(info) {
@@ -325,7 +375,7 @@
 
   return {
     FOUL_TEXT: FOUL_TEXT, KIND_NAME: KIND_NAME, groupOf: groupOf, newGame: newGame, nextGame: nextGame,
-    legalFirstIds: legalFirstIds, needCall: needCall, validCuePlacement: validCuePlacement, nearestValidCue: nearestValidCue,
+    legalFirstIds: legalFirstIds, needCall: needCall, needCallBall: needCallBall, validCuePlacement: validCuePlacement, nearestValidCue: nearestValidCue,
     validateShot: validateShot, prepareWorld: prepareWorld, evaluateShot: evaluateShot, timeoutFoul: timeoutFoul,
     resolveChoice: resolveChoice, defaultChoice: defaultChoice, forfeit: forfeit, onTable: onTable, ownLeft: ownLeft,
     getBall: getBall, describe: describe, clone: clone, findFreeSpot: findFreeSpot

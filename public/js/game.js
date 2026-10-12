@@ -4,7 +4,7 @@
   'use strict';
   const C = root.PoolConfig, P = root.PoolPhysics, Rules = root.PoolRules, AI = root.PoolAI, RNG = root.RNG, Render = root.PoolRender, Sound = root.Sound;
   const REASON = {
-    nine: '9 號球合法進袋', eight: '8 號球打進指定袋口', score: '先拿到 61 分', draw: '雙方 60 比 60',
+    nine: '9 號球合法進袋', eight: '8 號球打進指定袋口', score: '先拿到目標分數', draw: '平手',
     disconnect: '對手斷線逾時', forfeit: '對手離開了'
   };
   const EIGHT_LOSS = { open: '開放桌面時 8 號球進袋', foul: '犯規桿打進 8 號球', early: '還沒清完花色就打進 8 號球', pocket: '8 號球進了非指定袋口' };
@@ -18,7 +18,7 @@
       this.state = null; this.world = null; this.cfg = null;
       this.phase = 'idle';                  // idle | aiming | waiting | thinking | strike | roll | choice | over
       this.angle = 0; this.fine = 0; this.power = 0.5; this.spin = { u: 0, v: 0 }; this.jump = false;
-      this.call = -1; this.hand = null; this.dragMode = null;
+      this.call = -1; this.callBall = -1; this.safety = false; this.hand = null; this.dragMode = null;
       this.dropping = []; this.queue = []; this.pendingSettle = null; this.provisional = false;
       this.remoteAim = null; this.curShot = null; this.anim = null; this.aiAnim = null;
       this.lastAimSent = 0; this.turnEnd = 0; this.lastSec = -1; this.awaitEcho = false;
@@ -64,7 +64,7 @@
 
     /* ---------- 回合開始 ---------- */
     beginTurn(initial) {
-      const s = this.state; this.call = -1; this.hand = null; this.remoteAim = null;
+      const s = this.state; this.call = -1; this.callBall = -1; this.safety = false; this.hand = null; this.remoteAim = null;
       if (s.phase === 'over') { this.phase = 'over'; this.refresh(); this.showResult(); return; }
       if (s.phase === 'choice') { this.phase = 'choice'; this.refresh(); this.handleChoice(); return; }
       this.ui.choice && this.ui.choice(null);
@@ -86,6 +86,14 @@
       let best = null, bd = 1e9;
       const ids = s.isBreak ? [] : Rules.legalFirstIds(s);
       if (s.isBreak) { this.angle = Math.atan2(C.CENTER_Y - c.y, C.FOOT_X - c.x); this.fine = 0; this.ui.fine && this.ui.fine(0); return; }
+      const cands = AI.potCandidates(s, c);              // 優先對準「球→袋口」的進球線（鬼球位置），不是只對準球心
+      if (cands.length) {
+        const k = cands[0];
+        this.angle = Math.atan2(k.dir.y, k.dir.x); this.fine = 0; this.ui.fine && this.ui.fine(0);
+        if (Rules.needCall(s)) this.call = k.pocket;
+        else if (Rules.needCallBall(s)) { this.callBall = k.target; this.call = k.pocket; }
+        return;
+      }
       for (const id of ids) {
         const b = Rules.getBall(s, id); if (!b || b.pocket >= 0) continue;
         const d = Math.hypot(b.x - c.x, b.y - c.y); if (d < bd) { bd = d; best = b; }
@@ -115,7 +123,7 @@
             o.line2 = left === 0 ? '只剩 8 號球' : '剩 ' + left + ' 顆';
           }
         } else if (kind === 'score') {
-          o.score = s.scores[i]; o.line1 = s.scores[i] + ' 分'; o.line2 = '先到 61 分獲勝';
+          o.score = s.scores[i]; o.line1 = s.scores[i] + ' 分'; o.line2 = '先到 ' + s.target + ' 分獲勝';
         } else {
           const t = Rules.onTable(s).map(b => b.id), m = t.length ? Math.min.apply(null, t) : 0;
           o.line1 = '9 號球進袋者勝'; o.line2 = '最小的球：' + m + ' 號';
@@ -132,7 +140,8 @@
       else status = '輪到 ' + this.seatName(s.turn) + ' 出桿';
       if (s.phase === 'play' && s.turn === this.mySeat) {
         if (s.hand) hint = s.hand.behindHead ? '拖曳母球到開球線後方，再瞄準' : '自由球：可以把母球拖到任何空位';
-        if (Rules.needCall(s)) hint = this.call < 0 ? '請先點選 8 號球要進的袋口（金色虛線圈）' : '已指定袋口，可以擊球';
+        if (Rules.needCallBall(s)) hint = this.safety ? '安全球：不計分、不扣分，輪到對手' : (this.callBall < 0 ? '先點要打的球，再點它要進的袋口（或按「安全球」）' : (this.call < 0 ? '再點這顆球要進的袋口' : '已叫球，可以擊球'));
+        else if (Rules.needCall(s)) hint = this.call < 0 ? '請先點選 8 號球要進的袋口（金色虛線圈）' : '已指定袋口，可以擊球';
         if (!hint) hint = this.ruleLine(s);
       } else hint = this.ruleLine(s);
       if (s.last && s.last.fouls && s.last.fouls.length && s.phase !== 'over') hint = '上一桿：' + this.seatName(s.last.player) + ' 犯規（' + s.last.fouls.map(f => Rules.FOUL_TEXT[f]).join('、') + '）' + (s.hand && s.hand.player === this.mySeat ? '，你可以自由放置母球' : '');
@@ -147,20 +156,22 @@
         else if (Rules.needCall(s) && seat === s.turn) t = '打 8 號球';
         else t = g === 'solid' ? '打全色球' : '打半色球';
       } else if (s.kind === 'nine') { const ids = Rules.legalFirstIds(s); t = s.isBreak ? '開球' : '先碰 ' + (ids[0] || '') + ' 號球'; }
-      else t = s.isBreak ? '開球' : '打進越大的球分數越高';
+      else t = s.isBreak ? '開球' : (s.kids ? '打進任何球就得 1 分' : '叫球：點球再點袋口');
       return withDot ? ' ・ ' + t : t;
     }
     ruleLine(s) {
       if (s.kind === 'nine') return '規則：先碰最小號的球，打進 9 號球就贏';
       if (s.kind === 'eight') return '規則：先清完自己的花色，再把 8 號球打進指定袋口';
-      return '規則：進袋得該球的號碼分數，先到 61 分獲勝';
+      return s.kids ? '規則：每進一顆球得 1 分，先到 ' + s.target + ' 分獲勝' : '規則：叫球（點球＋點袋口）進袋得 1 分、犯規扣 1 分，先到 ' + s.target + ' 分獲勝';
     }
     pushControls() {
       const s = this.state, can = this.phase === 'aiming';
       let ok = can;
       if (can && s.hand && this.hand && !this.hand.ok) ok = false;
       if (can && Rules.needCall(s) && this.call < 0) ok = false;
-      this.ui.controls && this.ui.controls({ enabled: can, canShoot: ok, needCall: can && Rules.needCall(s), spectator: this.mySeat < 0, thinking: this.phase === 'thinking' });
+      const cb = Rules.needCallBall(s);
+      if (can && cb && !this.safety && (this.callBall < 0 || this.call < 0)) ok = false;
+      this.ui.controls && this.ui.controls({ enabled: can, canShoot: ok, needCall: can && (Rules.needCall(s) || (cb && !this.safety)), safetyBtn: can && cb, safety: this.safety, spectator: this.mySeat < 0, thinking: this.phase === 'thinking', _x: 0, });
     }
 
     /* ---------- 輸入 ---------- */
@@ -187,7 +198,20 @@
       Sound.sfx.click && Sound.sfx.click();
     }
     nudge(deg) { if (this.phase === 'aiming') { this.angle += rad(deg); this.sendAim(); } }
-    selectPocket(i) { if (this.phase === 'aiming' && Rules.needCall(this.state)) { this.call = i; Sound.sfx.click(); this.pushControls(); this.refresh(); } }
+    selectPocket(i) {
+      if (this.phase !== 'aiming') return;
+      if (Rules.needCall(this.state)) { this.call = i; }
+      else if (Rules.needCallBall(this.state)) { this.call = i; this.safety = false; }
+      else return;
+      Sound.sfx.click(); this.pushControls(); this.refresh();
+    }
+    selectBall(id) { if (this.phase === 'aiming' && Rules.needCallBall(this.state)) { this.callBall = id; this.safety = false; Sound.sfx.click(); this.pushControls(); this.refresh(); } }
+    toggleSafety() { if (this.phase === 'aiming' && Rules.needCallBall(this.state)) { this.safety = !this.safety; Sound.sfx.click(); this.pushControls(); this.refresh(); } }
+    ballHit(px, py) {
+      const t = this.r.toTable(px, py); let best = -1, bd = C.R * 1.6;
+      for (const b of this.state.balls) { if (b.id < 1 || b.pocket >= 0) continue; const d = Math.hypot(b.x - t.x, b.y - t.y); if (d < bd) { bd = d; best = b.id; } }
+      return best;
+    }
 
     _pt(e) { const r = this.canvas.getBoundingClientRect(); return { px: e.clientX - r.left, py: e.clientY - r.top }; }
     _bindPointer() {
@@ -197,7 +221,8 @@
         if (this.phase !== 'aiming') return;
         Sound.unlock();
         const { px, py } = this._pt(e), t = this.r.toTable(px, py);
-        if (Rules.needCall(this.state)) { const pk = this.r.pocketHit(px, py); if (pk >= 0) { this.selectPocket(pk); return; } }
+        if (Rules.needCall(this.state) || Rules.needCallBall(this.state)) { const pk = this.r.pocketHit(px, py); if (pk >= 0) { this.selectPocket(pk); return; } }
+        if (Rules.needCallBall(this.state)) { const id = this.ballHit(px, py); if (id > 0) { this.selectBall(id); return; } }
         const c = this.cuePos();
         if (this.hand && Math.hypot(t.x - c.x, t.y - c.y) < C.R * 3.2) {
           this.dragMode = 'hand'; this.dragOff = { x: c.x - t.x, y: c.y - t.y };
@@ -264,12 +289,14 @@
       if (this.jump) { shot.jump = 1; shot.sx = 0; shot.sy = 0; }
       if (this.hand) shot.cue = { x: Math.round(this.hand.x * 100) / 100, y: Math.round(this.hand.y * 100) / 100 };
       if (Rules.needCall(this.state)) shot.call = this.call;
+      else if (Rules.needCallBall(this.state)) { if (this.safety) shot.safety = 1; else { shot.cb = this.callBall; shot.call = this.call; } }
       return shot;
     }
     shoot() {
       if (this.phase !== 'aiming') return false;
       if (this.hand && !this.hand.ok) { this.ui.toast && this.ui.toast('母球的位置不合法'); return false; }
       if (Rules.needCall(this.state) && this.call < 0) { this.ui.toast && this.ui.toast('請先點選 8 號球要進的袋口'); this.flashT = performance.now(); return false; }
+      if (Rules.needCallBall(this.state) && !this.safety && (this.callBall < 0 || this.call < 0)) { this.ui.toast && this.ui.toast(this.callBall < 0 ? '請先點選要打的球，再點袋口（或按「安全球」）' : '請再點選這顆球要進的袋口'); this.flashT = performance.now(); return false; }
       const shot = this.buildShot();
       const err = Rules.validateShot(this.state, shot);
       if (err) { this.ui.toast && this.ui.toast(err); return false; }
@@ -374,6 +401,10 @@
         }
         if (this.hand) sc.hand = { x: this.hand.x, y: this.hand.y, ok: this.hand.ok };
         if (Rules.needCall(s)) sc.pocketCall = { selectable: true, selected: this.call, flash: this.flashT || 0 };
+        else if (Rules.needCallBall(s) && !this.safety) {
+          sc.pocketCall = { selectable: true, selected: this.call, flash: this.flashT || 0 };
+          const cbb = this.callBall > 0 ? Rules.getBall(s, this.callBall) : null; if (cbb && cbb.pocket < 0) sc.callBall = { x: cbb.x, y: cbb.y };
+        }
       } else if (cueOk && this.phase === 'thinking') {
         const d = { dx: Math.cos(this.angle), dy: Math.sin(this.angle) };
         sc.cue = { show: true, x: cue.x, y: cue.y, dx: d.dx, dy: d.dy, pull: 10 + 8 * Math.sin(now / 160), skin: this.skinFor(s.turn) };
@@ -390,7 +421,10 @@
         if (ra.cue) { sc.balls = balls.map(b => b.id === 0 ? { id: 0, x: ra.cue.x, y: ra.cue.y, pocket: -1 } : b); }
       }
       if (this.phase === 'choice') sc.cue = null;
-      if (s.kind === 'eight' && this.phase !== 'aiming' && this.curShot && this.curShot.shot.call != null && (this.phase === 'roll' || this.phase === 'strike')) sc.pocketCall = { selectable: false, selected: this.curShot.shot.call };
+      if ((s.kind === 'eight' || s.kind === 'score') && this.phase !== 'aiming' && this.curShot && this.curShot.shot.call != null && (this.phase === 'roll' || this.phase === 'strike')) {
+        sc.pocketCall = { selectable: false, selected: this.curShot.shot.call };
+        if (this.curShot.shot.cb) { const cb2 = this.curShot.preBalls && this.curShot.preBalls.filter(b => b.id === this.curShot.shot.cb)[0]; const lb = this.world && this.world.balls.filter(b => b.id === this.curShot.shot.cb)[0]; const q = lb && lb.pocket < 0 ? lb : cb2; if (q) sc.callBall = { x: q.x, y: q.y }; }
+      }
       this.r.draw(sc, now);
     }
     skinFor(seat) {
@@ -435,7 +469,13 @@
       const name = this.seatName(seat);
       const parts = [];
       if (info.fouls && info.fouls.length) { Sound.sfx.foul(); if (this.store.get('vibrate') && navigator.vibrate) { try { navigator.vibrate([40, 40, 60]); } catch (e) { /* ignore */ } } parts.push('犯規：' + info.fouls.map(f => Rules.FOUL_TEXT[f]).join('、')); }
-      if (info.pocketedObjects && info.pocketedObjects.length) parts.push(name + ' 進袋 ' + info.pocketedObjects.join('、') + ' 號');
+      if (after.kind === 'score') {
+        if (info.penalty) parts[parts.length - 1] += '，扣 1 分';
+        if (info.safety) parts.push(name + ' 打安全球');
+        else if (info.made) parts.push(name + ' 進袋 +' + info.pts + ' 分');
+        else if (info.missedCall) parts.push(name + ' 沒叫中');
+        if (info.reracked) parts.push('14 顆重新排球');
+      } else if (info.pocketedObjects && info.pocketedObjects.length) parts.push(name + ' 進袋 ' + info.pocketedObjects.join('、') + ' 號');
       (info.notes || []).forEach(n => { if (n.code === 'assign') parts.push(this.seatName(n.player) + ' 打' + (n.group === 'solid' ? '全色球' : '半色球')); });
       if (!parts.length && after.phase !== 'over') parts.push(name + ' 沒有進球');
       this.ui.toast && this.ui.toast(parts.join('，'), info.fouls && info.fouls.length ? 'foul' : 'info');
@@ -514,7 +554,7 @@
         reason = '8 號球判負：' + (EIGHT_LOSS[(s.last && s.last.eightLoss) || ''] || '8 號球不合法進袋');
       }
       if (s.last && s.last.eightLoss) reason = '8 號球判負：' + EIGHT_LOSS[s.last.eightLoss];
-      if (s.reason === 'score') reason = s.scores[w] >= 61 ? '先拿到 61 分' : '清檯後分數較高';
+      if (s.reason === 'score') reason = '先拿到 ' + s.target + ' 分';
       if (s.reason === 'eight') reason = '8 號球打進指定袋口';
       const win = w >= 0 ? w : -1;
       const youWin = win === this.mySeat;

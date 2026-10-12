@@ -90,7 +90,10 @@
     var q = P.quantizeDir(dir.x, dir.y);
     var s = { ax: q.ax, ay: q.ay, power: Math.max(8, Math.min(1000, Math.round(power))), sx: sx || 0, sy: sy || 0 };
     if (cueSpot) s.cue = { x: Math.round(cueSpot.x * 100) / 100, y: Math.round(cueSpot.y * 100) / 100 };
-    if (call != null) s.call = call;
+    if (call != null) {
+      if (typeof call === 'object') { if (call.safety) s.safety = 1; else { s.call = call.pocket; s.cb = call.cb; } }
+      else s.call = call;
+    }
     return s;
   }
 
@@ -120,7 +123,7 @@
     var foul = info.fouls.length > 0;
     if (foul) sc -= 400;
     if (info.scratch) sc -= 200;
-    if (state.kind === 'score') { for (i = 0; i < info.pocketedObjects.length; i++) sc += info.pocketedObjects[i] * 12; }
+    if (state.kind === 'score') { sc += (info.pts || 0) * 110; if (info.safety) sc += 30; }
     else {
       var g = state.groups[me];
       for (i = 0; i < info.pocketedObjects.length; i++) {
@@ -178,7 +181,8 @@
     var cue = state.balls[0], spot = null;
     if (state.hand) { spot = pickPlacement(state, L, rng); cue = { x: spot.x, y: spot.y }; }
     var think = Math.round(L.think[0] + rng.next() * (L.think[1] - L.think[0]));
-    var needCall = Rules.needCall(state);
+    var callMode = Rules.needCall(state) ? 'eight' : (Rules.needCallBall(state) ? 'ball' : null);
+    function cl(pocket, id) { return callMode === 'eight' ? pocket : (callMode === 'ball' ? { pocket: pocket, cb: id } : null); }
     function noisy(dir, power) {
       var err = (rng.next() * 2 - 1) * L.err;
       var pw = power * (1 + (rng.next() * 2 - 1) * L.perr);
@@ -207,7 +211,7 @@
         if (L.nearest) pool.sort(function (a, b) { return a.d1 - b.d1; });
         pick = level === 'kids' ? pool[Math.floor(rng.next() * Math.min(3, pool.length))] : pool[0];
         var n = noisy(pick.dir, powerFor(pick, level === 'kids' ? 1.15 : 1.1));
-        shot = mkShot(n.dir, n.power, 0, 0, spot, needCall ? pick.pocket : null);
+        shot = mkShot(n.dir, n.power, 0, 0, spot, cl(pick.pocket, pick.target));
       } else {
         var best = null, bs = -1e12;
         var K = Math.min(L.sims, cands.length);
@@ -217,7 +221,7 @@
           if (L.spin) variants = [[1.05, 0, 0], [1.3, 0, 0], [1.1, 0, 330], [1.1, 0, -330], [0.9, 0, 0]];
           for (j = 0; j < variants.length; j++) {
             var v = variants[j];
-            var sh = mkShot(c.dir, Math.min(1000, powerFor(c, v[0])), v[1], v[2], spot, needCall ? c.pocket : null);
+            var sh = mkShot(c.dir, Math.min(1000, powerFor(c, v[0])), v[1], v[2], spot, cl(c.pocket, c.target));
             var sm = simulate(state, sh);
             var sco = scoreOutcome(state, sm, me, L) - c.diff * 4;
             if (sco > bs) { bs = sco; best = { c: c, v: v, sh: sh }; }
@@ -225,7 +229,7 @@
         }
         // 輸入誤差在決定之後才加（讓高難度偶有失誤、但不離譜）
         var n2 = noisy(best.c.dir, best.sh.power);
-        shot = mkShot(n2.dir, n2.power, best.sh.sx, best.sh.sy, spot, needCall ? best.c.pocket : null);
+        shot = mkShot(n2.dir, n2.power, best.sh.sx, best.sh.sy, spot, cl(best.c.pocket, best.c.target));
       }
     } else {
       // 沒有乾淨的進球路線：打防守球（合法第一碰、輕力）
@@ -238,8 +242,7 @@
         opts.push({ id: T.id, dir: { x: dx / d, y: dy / d }, d: d, clear: clear(simState.balls, cue.x, cue.y, T.x, T.y, [0, T.id], 1.0) });
       }
       opts.sort(function (a, b) { return (b.clear - a.clear) || (a.d - b.d); });
-      var pc = needCall ? 0 : null;
-      if (needCall) pc = 0;
+      var pc = callMode === 'eight' ? 0 : (callMode === 'ball' ? { safety: 1 } : null);
       if (L.sims === 0) {
         var o = opts[0] || { dir: { x: 1, y: 0 } };
         var n3 = noisy(o.dir, 420 + rng.next() * 200);

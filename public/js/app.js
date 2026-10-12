@@ -221,7 +221,7 @@
   const KIND_INFO = [
     { id: 'nine', name: '簡化九球', tag: '預設', ball: '#f0be1e', stripe: true, desc: '一局約 5 分鐘。先碰桌上最小號的球，把 9 號球打進袋就贏。' },
     { id: 'eight', name: '八號球', tag: '正式規則', ball: '#17171a', desc: '分全色球與半色球，先清完自己的球，再把 8 號球打進指定的袋口。' },
-    { id: 'score', name: '搶分賽', tag: '適合全家', ball: '#d8322a', desc: '進袋得該球的號碼分數（1～15 分），先到 61 分獲勝。不用懂花色。' }
+    { id: 'score', name: '14-1 連續進球', tag: '連續得分', ball: '#d8322a', desc: '每一桿先叫球（點球、再點袋口），叫中就得分並繼續；犯規扣 1 分。先到 30 分獲勝，不用懂花色。' }
   ];
   const LEVEL_INFO = [
     { id: 'kids', name: '幼幼班', note: '袋口放大 25%、不判犯規、電腦常常失手，還有完整的輔助線。適合小朋友第一次玩。' },
@@ -314,9 +314,10 @@
     controls(c) {
       const dis = !c.enabled;
       $('#btnShoot').disabled = !c.canShoot;
+      $('#btnSafety').classList.toggle('hidden', !c.safetyBtn); $('#btnSafety').setAttribute('aria-pressed', c.safety ? 'true' : 'false');
       $('#fineSlider').classList.toggle('off', dis); $('#powerSlider').classList.toggle('off', dis);
       $('#spinBtn').disabled = dis; $$('#cueModes button').forEach(b => { b.disabled = dis; }); $('#gControls').classList.toggle('spectate', !!c.spectator);
-      $('#btnShoot').textContent = c.spectator ? '觀戰中' : (c.needCall && !c.canShoot ? '先選袋口' : (c.thinking ? '對手思考中' : '擊 球'));
+      $('#btnShoot').textContent = c.spectator ? '觀戰中' : (c.needCall && !c.canShoot ? '先叫球' : (c.thinking ? '對手思考中' : '擊 球'));
     },
     power(p) { $('#powerVal').textContent = Math.round(p * 100) + '%'; powerSlider.render(); },
     fine(d) { $('#fineVal').textContent = (d >= 0 ? '+' : '') + d.toFixed(2) + '°'; fineSlider.render(); },
@@ -372,6 +373,7 @@
   powerSlider.render = bindSlider($('#powerSlider'), { min: 0, max: 1, step: 0.01, get: () => (App.game ? App.game.power : 0.5), set: v => App.game && App.game.setPower(Math.max(0.02, v)), aria: 100 });
   fineSlider.render = bindSlider($('#fineSlider'), { min: -4, max: 4, step: 0.05, snap: 0, snapR: 0.08, get: () => (App.game ? App.game.fine : 0), set: v => App.game && App.game.setFine(v) });
   $('#btnShoot').onclick = () => { if (App.game) App.game.shoot(); };
+  $('#btnSafety').onclick = () => { if (App.game) App.game.toggleSafety(); };
   $('#btnRack').onclick = () => { if (App.game) App.game.resetPractice(); };
 
   /* 抽屜（直向） */
@@ -490,8 +492,8 @@
       <li>清完自己的花色後才能打 8 號球，而且要<b>先點選 8 號球要進的袋口</b>（金色虛線圈）。進了別的袋口、提早打進 8 號球、或犯規時打進 8 號球，都直接判負。</li>
       <li>犯規時對手取得自由球，犯規那一桿進袋的球不會放回桌面。</li>
     </ul>
-    <h3>搶分賽</h3>
-    <p>沒有花色限制，什麼球都可以先碰。進袋得到<b>該球的號碼分數</b>（1～15 分），總共 120 分，先拿到 61 分就贏。母球落袋扣 2 分並換手（幼幼班不扣分）。球打完雙方各 60 分則平手。</p>
+    <h3>14-1 連續進球</h3>
+    <p>每一桿都要<b>叫球</b>：先點要打的球，再點它要進的袋口（金色虛線圈）。叫的球進了指定袋口得 1 分，同一桿順便進袋的球也各得 1 分，而且可以繼續打；沒進指定袋口就不計分、進袋的球放回桌面並換手。覺得沒把握可以按<b>安全球</b>（先宣告，不計分也不扣分，換對手）。犯規扣 1 分、換手，對手取得自由球。先拿到 30 分獲勝。桌上只剩 1 顆球時，進袋的 14 顆會重新排成三角形（頂點空著），繼續打下去。開球不用叫球；幼幼班不用叫球也不扣分。</p>
     <h3>哪些情況是犯規？</h3>
     <ul><li>母球落袋</li><li>沒有碰到任何球</li><li>先碰到不該碰的球</li><li>碰球後沒有任何球進袋、也沒有任何球碰庫</li><li>線上對戰時回合超時</li></ul>
     <p>犯規的處罰：換對手出桿，而且對手可以把母球放在桌面任何空位（自由球）。</p>
