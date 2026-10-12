@@ -193,13 +193,21 @@
         c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) c.lineTo(pts[i][0], pts[i][1]); c.closePath();
         c.fillStyle = felt.cushion; c.fill(); c.strokeStyle = felt.cushionDark; c.lineWidth = 2.5; c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); c.lineTo(pts[1][0], pts[1][1]); c.stroke();
       }
-      const bev = 0, cg2 = 8, sg2 = 17; // 庫邊直接延伸進袋口（由黑洞蓋住），陰影與庫邊整合
-      cushion([[cg2, 0], [W / 2 - sg2, 0], [W / 2 - sg2 + bev, -CUSH], [cg2 - bev, -CUSH]]);
-      cushion([[W / 2 + sg2, 0], [W - cg2, 0], [W - cg2 + bev, -CUSH], [W / 2 + sg2 - bev, -CUSH]]);
-      cushion([[cg2, H], [W / 2 - sg2, H], [W / 2 - sg2 + bev, H + CUSH], [cg2 - bev, H + CUSH]]);
-      cushion([[W / 2 + sg2, H], [W - cg2, H], [W - cg2 + bev, H + CUSH], [W / 2 + sg2 - bev, H + CUSH]]);
-      cushion([[0, cg2], [0, H - cg2], [-CUSH, H - cg2 + bev], [-CUSH, cg2 - bev]]);
-      cushion([[W, cg2], [W, H - cg2], [W + CUSH, H - cg2 + bev], [W + CUSH, cg2 - bev]]);
+      const bev = 0, sg2 = 17, cgc = 46, bc = 24; // 側袋端直接伸進袋口；角袋端為斜切梯形，斜端後方是袋口黑暗
+      // 角袋袋口黑暗（庫邊之下、檯面之外）
+      c.save(); c.beginPath(); c.rect(-CUSH, -CUSH, W + 2 * CUSH, H + 2 * CUSH); c.rect(0, 0, W, H); c.clip('evenodd');
+      P.POCKETS.forEach(p => {
+        if (p.hx > 0 && p.hx < W) return;
+        const mg = c.createRadialGradient(p.hx, p.hy, 8, p.hx, p.hy, 66); mg.addColorStop(0, '#000'); mg.addColorStop(0.7, '#050302'); mg.addColorStop(1, '#0c0705');
+        c.fillStyle = mg; c.beginPath(); c.arc(p.hx, p.hy, 66, 0, TWO_PI); c.fill();
+      });
+      c.restore();
+      cushion([[cgc, 0], [W / 2 - sg2, 0], [W / 2 - sg2, -CUSH], [cgc - bc, -CUSH]]);
+      cushion([[W / 2 + sg2, 0], [W - cgc, 0], [W - cgc + bc, -CUSH], [W / 2 + sg2, -CUSH]]);
+      cushion([[cgc, H], [W / 2 - sg2, H], [W / 2 - sg2, H + CUSH], [cgc - bc, H + CUSH]]);
+      cushion([[W / 2 + sg2, H], [W - cgc, H], [W - cgc + bc, H + CUSH], [W / 2 + sg2, H + CUSH]]);
+      cushion([[0, cgc], [0, H - cgc], [-CUSH, H - cgc + bc], [-CUSH, cgc - bc]]);
+      cushion([[W, cgc], [W, H - cgc], [W + CUSH, H - cgc + bc], [W + CUSH, cgc - bc]]);
       // 庫邊高光
       c.strokeStyle = 'rgba(255,255,255,0.14)'; c.lineWidth = 1.5;
       [[cg, 0, W / 2 - sg, 0], [W / 2 + sg, 0, W - cg, 0], [cg, H, W / 2 - sg, H], [W / 2 + sg, H, W - cg, H], [0, cg, 0, H - cg], [W, cg, W, H - cg]].forEach(l => { c.beginPath(); c.moveTo(l[0], l[1]); c.lineTo(l[2], l[3]); c.stroke(); });
@@ -208,12 +216,12 @@
         const g2 = c.createLinearGradient(x0, y0, x1, y1); g2.addColorStop(0, 'rgba(255,255,255,0.10)'); g2.addColorStop(0.55, 'rgba(0,0,0,0.04)'); g2.addColorStop(1, 'rgba(0,0,0,0.30)');
         c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) c.lineTo(pts[i][0], pts[i][1]); c.closePath(); c.fillStyle = g2; c.fill();
       }
-      shade([[cg2, 0], [W / 2 - sg2, 0], [W / 2 - sg2 + bev, -CUSH], [cg2 - bev, -CUSH]], 0, -CUSH, 0, 0);
-      shade([[W / 2 + sg2, 0], [W - cg2, 0], [W - cg2 + bev, -CUSH], [W / 2 + sg2 - bev, -CUSH]], 0, -CUSH, 0, 0);
-      shade([[cg2, H], [W / 2 - sg2, H], [W / 2 - sg2 + bev, H + CUSH], [cg2 - bev, H + CUSH]], 0, H + CUSH, 0, H);
-      shade([[W / 2 + sg2, H], [W - cg2, H], [W - cg2 + bev, H + CUSH], [W / 2 + sg2 - bev, H + CUSH]], 0, H + CUSH, 0, H);
-      shade([[0, cg2], [0, H - cg2], [-CUSH, H - cg2 + bev], [-CUSH, cg2 - bev]], -CUSH, 0, 0, 0);
-      shade([[W, cg2], [W, H - cg2], [W + CUSH, H - cg2 + bev], [W + CUSH, cg2 - bev]], W + CUSH, 0, W, 0);
+      shade([[cgc, 0], [W / 2 - sg2, 0], [W / 2 - sg2, -CUSH], [cgc - bc, -CUSH]], 0, -CUSH, 0, 0);
+      shade([[W / 2 + sg2, 0], [W - cgc, 0], [W - cgc + bc, -CUSH], [W / 2 + sg2, -CUSH]], 0, -CUSH, 0, 0);
+      shade([[cgc, H], [W / 2 - sg2, H], [W / 2 - sg2, H + CUSH], [cgc - bc, H + CUSH]], 0, H + CUSH, 0, H);
+      shade([[W / 2 + sg2, H], [W - cgc, H], [W - cgc + bc, H + CUSH], [W / 2 + sg2, H + CUSH]], 0, H + CUSH, 0, H);
+      shade([[0, cgc], [0, H - cgc], [-CUSH, H - cgc + bc], [-CUSH, cgc - bc]], -CUSH, 0, 0, 0);
+      shade([[W, cgc], [W, H - cgc], [W + CUSH, H - cgc + bc], [W + CUSH, cgc - bc]], W + CUSH, 0, W, 0);
       c.save(); c.beginPath(); c.rect(0, 0, W, H); c.clip();
       [[0, 0, 0, 18, 'v'], [0, H, 0, H - 18, 'v'], [0, 0, 18, 0, 'h'], [W, 0, W - 18, 0, 'h']].forEach(e => {
         const sh = c.createLinearGradient(e[0], e[1], e[2], e[3]); sh.addColorStop(0, 'rgba(0,0,0,0.34)'); sh.addColorStop(1, 'rgba(0,0,0,0)');
