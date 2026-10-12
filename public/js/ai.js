@@ -10,8 +10,8 @@
     kids:   { name: '幼幼班', err: 8,   perr: 0.25, sims: 0, spin: false, pos: false, wild: 0.12, nearest: false, think: [900, 1600] },
     easy:   { name: '簡單',   err: 4,   perr: 0.12, sims: 0, spin: false, pos: false, wild: 0.04, nearest: true,  think: [900, 1800] },
     normal: { name: '普通',   err: 1.5, perr: 0.05, sims: 4, spin: false, pos: false, wild: 0,    nearest: false, think: [1200, 2200] },
-    hard:   { name: '困難',   err: 0.4, perr: 0.02, sims: 9, spin: true,  pos: true,  wild: 0,    nearest: false, think: [1500, 2500] },
-    myth:   { name: '神話', err: 0.06, perr: 0.004, sims: 16, spin: true, pos: true, wild: 0, nearest: false, deep: true, think: [2000, 3200] }
+    hard:   { name: '困難',   err: 0.14, perr: 0.01, sims: 9, spin: true,  pos: true,  wild: 0,    nearest: false, search: true, think: [1500, 2500] },
+    myth:   { name: '神話', err: 0.025, perr: 0.003, sims: 16, spin: true, pos: true, wild: 0, nearest: false, deep: true, search: true, think: [2000, 3200] }
   };
 
   function segDist(px, py, ax, ay, bx, by) {
@@ -177,6 +177,44 @@
     return best;
   }
 
+  // 角度掃描：每隔幾度、多種力道與擊球點都用引擎預演，挑分數最高的（會自己找出組合球、反彈球、解球與安全球）
+  function searchBest(state, spot, L, me, callArg, rng) {
+    var cue = spot || state.balls[0], best = null, bs = -1e12, a, k, m, pots = [];
+    var step = L.deep ? 3 : 5, powers = L.deep ? [220, 380, 560, 760, 980] : [380, 650, 950], spins = L.deep ? [0, 300, -300] : [0];
+    var off = rng ? rng.next() * step : 0;
+    function tryShot(deg, pw, sy, jump) {
+      var ar = deg * Math.PI / 180, sh = mkShot({ x: Math.cos(ar), y: Math.sin(ar) }, pw, 0, sy, spot, callArg);
+      if (jump) sh.jump = 1;
+      var sc = scoreOutcome(state, simulate(state, sh), me, L);
+      if (sc >= 40) pots.push({ deg: deg, pw: pw, sy: sy, jump: jump, sc: sc });
+      if (sc > bs) { bs = sc; best = { deg: deg, pw: pw, sy: sy, jump: jump }; }
+    }
+    for (a = off; a < 360; a += step) for (k = 0; k < powers.length; k++) for (m = 0; m < spins.length; m++) tryShot(a, powers[k], spins[m], false);
+    if (best) {                                     // 在最好的角度附近再細掃
+      var b0 = best, fine = L.deep ? [-1.5, -1, -0.5, 0.5, 1, 1.5] : [-1.5, -0.75, 0.75, 1.5];
+      for (k = 0; k < fine.length; k++) tryShot(b0.deg + fine[k], b0.pw, b0.sy, false);
+      var pj = [b0.pw * 0.8, b0.pw, Math.min(1000, b0.pw * 1.2)];
+      for (k = 0; k < pj.length; k++) tryShot(best.deg, pj[k], best.sy, false);
+    }
+    if (!best) return null;
+    if (pots.length) {                               // 進球的打法要經得起一點點誤差，不然是運氣
+      pots.sort(function (x, y) { return y.sc - x.sc; });
+      var tt = [[-0.35, 1], [0.35, 1], [0, 0.95], [0, 1.05], [-0.18, 1], [0.18, 1]], bt2 = -1e12;
+      for (k = 0; k < Math.min(10, pots.length); k++) {
+        var pk = pots[k], okn = 0;
+        for (m = 0; m < tt.length; m++) {
+          var a3 = (pk.deg + tt[m][0]) * Math.PI / 180, sh5 = mkShot({ x: Math.cos(a3), y: Math.sin(a3) }, Math.min(1000, pk.pw * tt[m][1]), 0, pk.sy, spot, callArg);
+          var r5 = simulate(state, sh5); if (r5.info.pocketedObjects.length && !r5.info.fouls.length) okn++;
+        }
+        var tot2 = pk.sc - 140 * (1 - okn / tt.length);
+        if (tot2 > bt2) { bt2 = tot2; best = pk; bs = tot2; }
+      }
+    }
+    var ar2 = best.deg * Math.PI / 180, out = mkShot({ x: Math.cos(ar2), y: Math.sin(ar2) }, best.pw, 0, best.sy, spot, callArg);
+    if (best.jump) out.jump = 1;
+    return { shot: out, sc: bs, dir: { x: Math.cos(ar2), y: Math.sin(ar2) } };
+  }
+
   function chooseShot(state, level, rng) {
     var L = LEVELS[level] || LEVELS.normal, me = state.turn, i, j;
     var cue = state.balls[0], spot = null;
@@ -227,11 +265,45 @@
             var sh = mkShot(c.dir, Math.min(1000, powerFor(c, v[0])), v[1], v[2], spot, cl(c.pocket, c.target));
             var sm = simulate(state, sh);
             var sco = scoreOutcome(state, sm, me, L) - c.diff * 4;
-            if (L.deep) pool2.push({ c: c, v: v, sh: sh, sm: sm, sco: sco });
+            if (L.search) pool2.push({ c: c, v: v, sh: sh, sm: sm, sco: sco });
             if (sco > bs) { bs = sco; best = { c: c, v: v, sh: sh }; }
           }
         }
-        if (L.deep && pool2.length) {                 // 神話：把前幾名的打法再往後預演一桿（打進後下一桿好不好打）
+        if (bs < 40 && L.search) {                    // 沒有任何候選進得了：把角度微調掃一輪（補幾何估算的小誤差）
+          var offs = L.deep ? [-0.9, -0.6, -0.3, 0.3, 0.6, 0.9] : [-0.6, -0.3, 0.3, 0.6];
+          for (i = 0; i < Math.min(8, cands.length); i++) {
+            for (var oi = 0; oi < offs.length; oi++) {
+              var dR = rotate(cands[i].dir, offs[oi]);
+              [1.05, 1.3].forEach(function (pm) {
+                var shR = mkShot(dR, Math.min(1000, powerFor(cands[i], pm)), 0, 0, spot, cl(cands[i].pocket, cands[i].target));
+                var scR = scoreOutcome(state, simulate(state, shR), me, L) - cands[i].diff * 4;
+                if (scR > bs) { bs = scR; best = { c: Object.assign({}, cands[i], { dir: dR }), v: [pm, 0, 0], sh: shR }; }
+              });
+            }
+          }
+        }
+        if (L.search && bs >= 40 && pool2.length) {   // 穩定度：把前幾名的進球打法加一點角度與力道誤差再預演，挑「差一點點也進」的
+          pool2.sort(function (x, y) { return y.sco - x.sco; });
+          var tests = [[-0.35, 1], [0.35, 1], [0, 0.95], [0, 1.05], [-0.18, 1], [0.18, 1], [-0.18, 0.97], [0.18, 1.03]];
+          var topR = pool2.slice(0, 16), bestR = -1e12;
+          for (i = 0; i < topR.length; i++) {
+            var tr = topR[i]; if (tr.sco < 40) continue;
+            var okc = 0;
+            for (j = 0; j < tests.length; j++) {
+              var shT = mkShot(rotate(tr.c.dir, tests[j][0]), Math.min(1000, tr.sh.power * tests[j][1]), tr.sh.sx, tr.sh.sy, spot, cl(tr.c.pocket, tr.c.target));
+              var rT = simulate(state, shT);
+              if (rT.info.pocketedObjects.length && !rT.info.fouls.length) okc++;
+            }
+            tr.sco += 160 * okc / tests.length;
+            if (tr.sco > bestR) { bestR = tr.sco; best = { c: tr.c, v: tr.v, sh: tr.sh }; }
+          }
+        }
+        var searchPick = null;
+        if (bs < 40 && L.search && callMode !== 'eight') {
+          var sr = searchBest(simState, spot, L, me, callMode === 'ball' ? { safety: 1 } : null, rng);
+          if (sr && sr.sc > bs + 10) searchPick = sr;
+        }
+        if (L.deep && !searchPick && pool2.length) {                 // 神話：把前幾名的打法再往後預演一桿（打進後下一桿好不好打）
           pool2.sort(function (x, y) { return y.sco - x.sco; });
           var top = pool2.slice(0, 5), bt = -1e12;
           for (i = 0; i < top.length; i++) {
@@ -249,8 +321,13 @@
           }
         }
         // 輸入誤差在決定之後才加（讓高難度偶有失誤、但不離譜）
-        var n2 = noisy(best.c.dir, best.sh.power);
-        shot = mkShot(n2.dir, n2.power, best.sh.sx, best.sh.sy, spot, cl(best.c.pocket, best.c.target));
+        if (searchPick) {
+          var nS = noisy(searchPick.dir, searchPick.shot.power);
+          shot = mkShot(nS.dir, nS.power, searchPick.shot.sx, searchPick.shot.sy, spot, callMode === 'ball' ? { safety: 1 } : null);
+        } else {
+          var n2 = noisy(best.c.dir, best.sh.power);
+          shot = mkShot(n2.dir, n2.power, best.sh.sx, best.sh.sy, spot, cl(best.c.pocket, best.c.target));
+        }
       }
     } else {
       // 沒有乾淨的進球路線：打防守球（合法第一碰、輕力）
@@ -288,8 +365,12 @@
           }
         }
         var base = bestS || mkShot({ x: 1, y: 0 }, 400, 0, 0, spot, pc);
+        if (L.search) {                                  // 防守時也掃一輪角度：找解球／反彈碰球／安全球
+          var sr2 = searchBest(simState, spot, L, me, pc, rng);
+          if (sr2 && sr2.sc > bsS) base = sr2.shot;
+        }
         var n4 = noisy({ x: base.ax / 1e6, y: base.ay / 1e6 }, base.power);
-        shot = mkShot(n4.dir, n4.power, 0, 0, spot, pc); if (base.jump) shot.jump = 1;
+        shot = mkShot(n4.dir, n4.power, base.sx || 0, base.sy || 0, spot, pc); if (base.jump) shot.jump = 1;
       }
     }
     return { shot: shot, think: think };
