@@ -145,6 +145,18 @@ section('進袋判定（與畫面黑洞一致）');
   });
   ok(allIn, '球心在黑洞邊緣內（六個袋口）→ 掉進袋');
   ok(noneOut, '球心離黑洞外緣太遠 → 不會掉進袋');
+  let approaches = true;
+  for (const scale of [1, C.POCKET_SCALE_BIG]) for (const speed of [180, 900, 2500]) {
+    P.POCKETS.forEach((pk, i) => {
+      const ux = pk.corner ? (pk.x ? -Math.SQRT1_2 : Math.SQRT1_2) : 0;
+      const uy = (pk.y ? -1 : 1) * (pk.corner ? Math.SQRT1_2 : 1);
+      const w = P.makeWorld([{ id: 0, x: pk.hx + ux * 60, y: pk.hy + uy * 60 }], { pocketScale: scale });
+      w.balls[0].vx = -ux * speed; w.balls[0].vy = -uy * speed;
+      P.runToRest(w);
+      if (w.balls[0].pocket !== i) approaches = false;
+    });
+  }
+  ok(approaches, '六袋正向入袋：慢／中／高速、標準／加大袋口（36 情境）');
 }
 
 section('跳桿');

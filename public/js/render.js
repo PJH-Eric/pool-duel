@@ -230,8 +230,8 @@
         for (let i = pts.length - 1; i >= 0; i--) { const q = pts[i]; while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], q) <= 0) up.pop(); up.push(q); }
         lo.pop(); up.pop(); return lo.concat(up);
       }
-      // 袋口只畫在桌面之外（桌面本身保持完整）
-      c.save(); c.beginPath(); c.rect(-FR, -FR, ow, oh); c.rect(0, 0, W, H); c.clip('evenodd');
+      // 圓袋嵌入桌布，洞心及半徑與進袋判定共用。
+      c.save();
       P.POCKETS.forEach(p => {
         const rd = p.hr * (state.pocketScale || 1);
         // 木框上的細皮革邊（只在木頭上看得到）
@@ -241,6 +241,9 @@
         const hole = c.createRadialGradient(p.hx, p.hy, rd * 0.2, p.hx, p.hy, rd * 1.6);
         hole.addColorStop(0, '#000'); hole.addColorStop(0.6, '#050302'); hole.addColorStop(1, '#0d0806');
         poly(mouth(p, rd)); c.fillStyle = hole; c.fill();
+        c.beginPath(); c.arc(p.hx, p.hy, rd, 0, TWO_PI);
+        c.fillStyle = hole; c.fill();
+        c.strokeStyle = '#101711'; c.lineWidth = 2; c.stroke();
       });
       c.restore();
       // 洞內一點點反光，讓洞有深度
@@ -468,7 +471,7 @@
       if (sc.pocketCall) {
         const pc = sc.pocketCall;
         P.POCKETS.forEach((p, i) => {
-          const px = p.x + (p.corner ? (p.x ? 8 : -8) : 0), py = p.y + (p.corner ? (p.y ? 8 : -8) : (p.y ? 12 : -12));
+          const px = p.hx, py = p.hy;
           if (pc.selectable) {
             if (pc.selected === i) { ring(px, py, 44, 'rgba(255,214,102,0.95)', 5); const q = toScreen(px, py); g.fillStyle = 'rgba(255,214,102,0.22)'; g.beginPath(); g.arc(q.x, q.y, 44 * state.s, 0, TWO_PI); g.fill(); }
             else if (pc.flash && now - pc.flash < 1400) { const k = Math.abs(Math.sin((now - pc.flash) / 1400 * Math.PI * 4)); ring(px, py, 44 + 6 * k, 'rgba(255,120,90,' + (0.5 + 0.5 * k) + ')', 5 + 3 * k); }
@@ -514,7 +517,7 @@
       // 進袋動畫
       if (sc.dropping) for (const d of sc.dropping) {
         const k = clamp01(d.t), pp = P.POCKETS[d.pocket];
-        const x = d.x + (pp.x - d.x) * k * 0.85, y = d.y + (pp.y - d.y) * k * 0.85;
+        const x = d.x + (pp.hx - d.x) * k, y = d.y + (pp.hy - d.y) * k;
         drawBall({ id: d.id, x, y }, 1 - k * 0.7, 1 - k * 0.9);
       }
       // 球桿
@@ -528,7 +531,7 @@
       pocketHit(px, py) {
         const t = toTable(px, py);
         let best = -1, bd = 1e9;
-        P.POCKETS.forEach((p, i) => { const cx = p.x + (p.corner ? (p.x ? 8 : -8) : 0), cy = p.y + (p.corner ? (p.y ? 8 : -8) : (p.y ? 12 : -12)); const d = Math.hypot(t.x - cx, t.y - cy); if (d < bd) { bd = d; best = i; } });
+        P.POCKETS.forEach((p, i) => { const d = Math.hypot(t.x - p.hx, t.y - p.hy); if (d < bd) { bd = d; best = i; } });
         return bd < 70 ? best : -1;
       },
       resetRolls() { state.rolls = {}; }
