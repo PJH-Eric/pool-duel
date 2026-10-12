@@ -271,7 +271,7 @@
     g.practiceCount = 0;
     g.start({ mode: cfg.mode, kind: cfg.kind, level: cfg.mode === 'practice' ? 'kids' : cfg.level, mySeat: 0, seats, bigPockets: cfg.level === 'kids' });
     applySettings();
-    closeDrawer();
+    resetDrawer();
   };
   App.startOnlineGame = function (gameMsg, room, extra) {
     App.show('game');
@@ -282,7 +282,7 @@
     g.start({ mode: 'online', kind: gameMsg.kind, mySeat: me, state: gameMsg.state, seats: gameMsg.seats.map(s => ({ name: s.name })), cues: gameMsg.seats.map(s => s.cue), aimMode: gameMsg.cfg.aim, net: root.Net, turnMs: gameMsg.turnMs, bigPockets: gameMsg.cfg.pockets === 'big' });
     $('#gSpec').classList.toggle('hidden', me >= 0);
     $('#gSpec').textContent = '你是觀戰者：可以看全桌、可以聊天';
-    applySettings(); closeDrawer(); unread = 0; updateUnread();
+    applySettings(); resetDrawer(); unread = 0; updateUnread();
   };
 
   const seatHtml = (s, mini) => {
@@ -367,9 +367,13 @@
   $('#btnRack').onclick = () => { if (App.game) App.game.resetPractice(); };
 
   /* 抽屜（直向） */
-  function openDrawer() { $('#gPanel').classList.add('open'); unread = 0; updateUnread(); }
-  function closeDrawer() { $('#gPanel').classList.remove('open'); }
-  $('#gDrawer').onclick = () => ($('#gPanel').classList.contains('open') ? closeDrawer() : openDrawer());
+  const isSideLayout = () => matchMedia('(min-aspect-ratio: 1/1) and (min-width: 821px)').matches;
+  const gMain = () => document.querySelector('.g-main');
+  const relayout = () => setTimeout(() => window.dispatchEvent(new Event('resize')), 30);
+  function openDrawer() { if (isSideLayout()) { gMain().classList.remove('collapsed'); relayout(); } else $('#gPanel').classList.add('open'); unread = 0; updateUnread(); }
+  function closeDrawer() { if (isSideLayout()) { gMain().classList.add('collapsed'); relayout(); } else $('#gPanel').classList.remove('open'); }
+  function resetDrawer() { $('#gPanel').classList.remove('open'); gMain().classList.remove('collapsed'); }
+  $('#gDrawer').onclick = () => { if (isSideLayout()) return gMain().classList.contains('collapsed') ? openDrawer() : closeDrawer(); return $('#gPanel').classList.contains('open') ? closeDrawer() : openDrawer(); };
   $('#gPanelClose').onclick = closeDrawer;
   function updateUnread() {
     const b = $('#gUnread'); b.textContent = unread; b.classList.toggle('hidden', !unread);

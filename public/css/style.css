@@ -149,6 +149,14 @@ button { font-family: inherit; }
 .timer-dot.low { border-color: var(--red); color: #ffb0a4; animation: pulse .6s infinite alternate; }
 @keyframes pulse { to { transform: scale(1.1); } }
 .drawer-close { display: none; }
+/* 橫向（資訊欄固定在左邊）：× 與 ☰ 用來收合／展開資訊欄，讓桌面更大 */
+.panel .drawer-close.btn { display: inline-flex; }
+.g-main .drawer-btn.btn { display: none; }
+@media (min-aspect-ratio: 1/1) and (min-width: 821px) {
+  .g-main.collapsed { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .g-main.collapsed .panel { display: none; }
+  .g-main.collapsed .drawer-btn.btn { display: inline-flex; }
+}
 .seat-list { display: flex; flex-direction: column; gap: 8px; }
 .pseat { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; align-items: center; padding: 10px; border-radius: 14px; border: 2px solid transparent; background: rgba(255,255,255,.03); }
 .pseat.turn { border-color: var(--brass); background: rgba(227,168,64,.08); box-shadow: 0 0 0 2px rgba(227,168,64,.15); }
@@ -263,7 +271,7 @@ button { font-family: inherit; }
   .panel { position: absolute; z-index: 20; left: 8px; top: 0; bottom: 0; width: min(86vw, 340px); transform: translateX(-110%); transition: transform .22s; box-shadow: 0 0 40px rgba(0,0,0,.8); background: linear-gradient(#22140c, #150a06); }
   .panel.open { transform: translateX(0); }
   .drawer-close { display: inline-flex; }
-  .drawer-btn { display: inline-flex; }
+  .g-main .drawer-btn.btn { display: inline-flex; }
   .capsules { display: flex; gap: 8px; }
   .g-status { font-size: 15px; padding: 7px 12px; }
   .room-grid { grid-template-columns: 1fr; }
