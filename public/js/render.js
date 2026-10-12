@@ -204,8 +204,7 @@
       [[cg, 0, W / 2 - sg, 0], [W / 2 + sg, 0, W - cg, 0], [cg, H, W / 2 - sg, H], [W / 2 + sg, H, W - cg, H], [0, cg, 0, H - cg], [W, cg, W, H - cg]].forEach(l => { c.beginPath(); c.moveTo(l[0], l[1]); c.lineTo(l[2], l[3]); c.stroke(); });
       // 袋口
       P.POCKETS.forEach((p, i) => {
-        const rad = (p.corner ? 32 : 29), px = p.x + (p.corner ? (p.x ? 7 : -7) : 0), py = p.y + (p.y ? 9 : -9) * (p.corner ? 0.8 : 1);
-        const sx = p.corner ? px : p.x, sy = p.corner ? (p.y ? H + 7 : -7) : (p.y ? H + 9 : -9);
+        const rad = p.hr, sx = p.hx, sy = p.hy;
         const rim = c.createRadialGradient(sx, sy, rad * 0.7, sx, sy, rad + 8); rim.addColorStop(0, '#5a2d14'); rim.addColorStop(0.6, '#7a4220'); rim.addColorStop(1, 'rgba(60,30,10,0)');
         c.fillStyle = rim; c.beginPath(); c.arc(sx, sy, rad + 8, 0, TWO_PI); c.fill();
         const hole = c.createRadialGradient(sx - 4, sy - 4, 2, sx, sy, rad); hole.addColorStop(0, '#1b1511'); hole.addColorStop(1, '#030201');

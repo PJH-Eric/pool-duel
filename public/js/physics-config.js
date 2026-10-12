@@ -21,8 +21,10 @@
     JAW_R: 5,                   // 袋口尖角圓半徑
     CORNER_GAP: 32,             // 角袋：庫邊從角落起算的缺口
     SIDE_GAP: 26,               // 邊袋：中點兩側缺口半寬
-    CAP_CORNER: 23.5,             // 角袋捕捉半徑
-    CAP_SIDE: 21.5,               // 邊袋捕捉半徑
+    // 袋口（畫面上看到的黑洞）與進袋判定使用同一組數字：球心進到黑洞範圍（再加一點點）就掉進去
+    HOLE_R_CORNER: 32, HOLE_R_SIDE: 29,    // 黑洞半徑
+    HOLE_OFF_CORNER: 7, HOLE_OFF_SIDE: 9,  // 黑洞圓心往桌外偏移（角袋：x、y 各偏；邊袋：往庫邊外偏）
+    CAP_MARGIN: 3,                         // 判定比黑洞外緣多出的寬容度
     POCKET_SCALE_BIG: 1.25,     // 「加大袋口」倍率
     MAX_SIM_TIME: 30,           // 單桿模擬時間上限（秒）
     // 簡化旋轉

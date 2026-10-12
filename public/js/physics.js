@@ -12,6 +12,13 @@
     { x: 0, y: 0, corner: true }, { x: W / 2, y: 0, corner: false }, { x: W, y: 0, corner: true },
     { x: 0, y: H, corner: true }, { x: W / 2, y: H, corner: false }, { x: W, y: H, corner: true }
   ];
+  // 黑洞圓心（判定與畫面共用）：角袋往桌外斜偏、邊袋往庫邊外偏
+  POCKETS.forEach(function (p) {
+    var o = p.corner ? C.HOLE_OFF_CORNER : C.HOLE_OFF_SIDE;
+    p.hx = p.corner ? (p.x ? p.x + o : p.x - o) : p.x;
+    p.hy = p.corner ? (p.y ? p.y + o : p.y - o) : (p.y ? p.y + o : p.y - o);
+    p.hr = p.corner ? C.HOLE_R_CORNER : C.HOLE_R_SIDE;
+  });
   var CG = C.CORNER_GAP, SG = C.SIDE_GAP, JR = C.JAW_R;
   var JAWS = [
     [CG, -JR], [-JR, CG], [W - CG, -JR], [W + JR, CG],
@@ -19,7 +26,7 @@
     [W / 2 - SG, -JR], [W / 2 + SG, -JR], [W / 2 - SG, H + JR], [W / 2 + SG, H + JR]
   ];
 
-  function capRadius(p, scale) { return (p.corner ? C.CAP_CORNER : C.CAP_SIDE) * scale; }
+  function capRadius(p, scale) { return (p.hr + C.CAP_MARGIN) * scale; }
 
   function makeWorld(balls, opts) {
     opts = opts || {};
@@ -192,7 +199,7 @@
         if (b.air > 0) continue;                      // 空中不會進袋、也不會撞袋口尖角
         jawCollide(w, b);
         for (var p = 0; p < 6; p++) {
-          var P = POCKETS[p], dx = b.x - P.x, dy = b.y - P.y, cr = capRadius(P, w.pocketScale);
+          var P = POCKETS[p], dx = b.x - P.hx, dy = b.y - P.hy, cr = capRadius(P, w.pocketScale);
           if (dx * dx + dy * dy < cr * cr) { pocketBall(w, b, p); break; }
         }
         if (b.pocket < 0 && (b.x < -R || b.x > W + R || b.y < -R || b.y > H + R)) {

@@ -113,6 +113,21 @@ section('推桿／定桿／拉桿與滑動');
   ok(P.runToRest(w).t < 9, '全力一桿能在 9 秒內停下（動畫不會太長）');
 }
 
+section('進袋判定（與畫面黑洞一致）');
+{
+  // 球心落在畫面上黑洞範圍內（靠近桌內的那一側）就必須掉進去；離洞外緣超過寬容度則不會
+  let allIn = true, noneOut = true;
+  P.POCKETS.forEach((pk, i) => {
+    const ix = pk.x < C.W / 2 ? 1 : (pk.x > C.W / 2 ? -1 : 0), iy = pk.y < C.H / 2 ? 1 : -1;
+    const n = pk.corner ? Math.hypot(ix, iy) : 1, ux = ix / n, uy = iy / n;
+    const inside = (d) => { const w = P.makeWorld([{ id: 0, x: pk.hx + ux * d, y: pk.hy + uy * d, pocket: -1 }]); w.balls[0].vx = ux * -30; w.balls[0].vy = uy * -30; for (let k = 0; k < 6; k++) P.stepWorld(w); return w.balls[0].pocket === i; };
+    if (!inside(pk.hr - 2)) allIn = false;            // 球心在黑洞邊緣內側 2 單位
+    if (inside(pk.hr + C.CAP_MARGIN + 6)) noneOut = false;   // 球心在黑洞外緣外 9 單位：不該掉
+  });
+  ok(allIn, '球心在黑洞邊緣內（六個袋口）→ 掉進袋');
+  ok(noneOut, '球心離黑洞外緣太遠 → 不會掉進袋');
+}
+
 section('跳桿');
 {
   const mk = (jump, pw) => { const w = P.makeWorld([{ id: 0, x: 100, y: 250, pocket: -1 }, { id: 1, x: 200, y: 250, pocket: -1 }, { id: 2, x: 480, y: 250, pocket: -1 }]); P.applyShot(w, Object.assign(P.quantizeDir(1, 0), { power: pw, sx: 0, sy: 0 }, jump ? { jump: 1 } : {})); const r = P.runToRest(w); return { w, r }; };
