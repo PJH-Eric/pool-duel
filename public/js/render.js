@@ -160,7 +160,7 @@
       const rnd = mulberry(11);
       // 木框
       const ow = W + 2 * FR, oh = H + 2 * FR;
-      const wood = c.createLinearGradient(-FR, -FR, -FR, H + FR); wood.addColorStop(0, '#8f4128'); wood.addColorStop(0.5, '#6b2b1a'); wood.addColorStop(1, '#431a0f');
+      const wood = c.createLinearGradient(-FR, -FR, -FR, H + FR); wood.addColorStop(0, '#a8693f'); wood.addColorStop(0.5, '#7d4527'); wood.addColorStop(1, '#4d2714');
       c.shadowColor = 'rgba(0,0,0,0.65)'; c.shadowBlur = 26 * state.s * state.dpr * 0.25; c.shadowOffsetY = 8;
       rr(c, -FR, -FR, ow, oh, 40); c.fillStyle = wood; c.fill();
       c.shadowColor = 'transparent';
@@ -187,27 +187,30 @@
       c.save(); c.beginPath(); c.rect(-CUSH, -CUSH, W + 2 * CUSH, H + 2 * CUSH); c.clip();
       const pat = c.createPattern(noiseTile(), 'repeat'); c.globalAlpha = 0.9; c.fillStyle = pat; c.fillRect(-CUSH, -CUSH, W + 2 * CUSH, H + 2 * CUSH);
       c.restore();
+      // 袋口喉部：庫邊斜端與袋框之間用桌布同色填滿
+      c.save(); c.beginPath(); c.rect(-CUSH, -CUSH, W + 2 * CUSH, H + 2 * CUSH); c.rect(0, 0, W, H); c.clip('evenodd');
+      P.POCKETS.forEach(p => {
+        const rd = p.hr * (state.pocketScale || 1), R = rd + 44;
+        const R2 = R;
+        c.save(); c.beginPath(); c.arc(p.hx, p.hy, R2, 0, TWO_PI); c.clip();
+        c.fillStyle = fg; c.fillRect(-CUSH, -CUSH, W + 2 * CUSH, H + 2 * CUSH);
+        c.globalAlpha = 0.9; c.fillStyle = pat; c.fillRect(-CUSH, -CUSH, W + 2 * CUSH, H + 2 * CUSH);
+        c.restore();
+      });
+      c.restore();
       // 庫邊橡膠（梯形，靠袋口處斜切）
       const cg = C.CORNER_GAP, sg = C.SIDE_GAP;
       function cushion(pts) {
         c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) c.lineTo(pts[i][0], pts[i][1]); c.closePath();
-        c.fillStyle = felt.cushion; c.fill(); c.strokeStyle = felt.cushionDark; c.lineWidth = 2.5; c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); c.lineTo(pts[1][0], pts[1][1]); c.stroke();
+        c.fillStyle = felt.cushion; c.fill(); c.strokeStyle = felt.cushionDark; c.lineWidth = 2.5; c.stroke();
       }
-      const bev = 0, sg2 = 17, cgc = 46, bc = 24; // 側袋端直接伸進袋口；角袋端為斜切梯形，斜端後方是袋口黑暗
-      // 角袋袋口黑暗（庫邊之下、檯面之外）
-      c.save(); c.beginPath(); c.rect(-CUSH, -CUSH, W + 2 * CUSH, H + 2 * CUSH); c.rect(0, 0, W, H); c.clip('evenodd');
-      P.POCKETS.forEach(p => {
-        if (p.hx > 0 && p.hx < W) return;
-        const mg = c.createRadialGradient(p.hx, p.hy, 8, p.hx, p.hy, 66); mg.addColorStop(0, '#000'); mg.addColorStop(0.7, '#050302'); mg.addColorStop(1, '#0c0705');
-        c.fillStyle = mg; c.beginPath(); c.arc(p.hx, p.hy, 66, 0, TWO_PI); c.fill();
-      });
-      c.restore();
-      cushion([[cgc, 0], [W / 2 - sg2, 0], [W / 2 - sg2, -CUSH], [cgc - bc, -CUSH]]);
-      cushion([[W / 2 + sg2, 0], [W - cgc, 0], [W - cgc + bc, -CUSH], [W / 2 + sg2, -CUSH]]);
-      cushion([[cgc, H], [W / 2 - sg2, H], [W / 2 - sg2, H + CUSH], [cgc - bc, H + CUSH]]);
-      cushion([[W / 2 + sg2, H], [W - cgc, H], [W - cgc + bc, H + CUSH], [W / 2 + sg2, H + CUSH]]);
-      cushion([[0, cgc], [0, H - cgc], [-CUSH, H - cgc + bc], [-CUSH, cgc - bc]]);
-      cushion([[W, cgc], [W, H - cgc], [W + CUSH, H - cgc + bc], [W + CUSH, cgc - bc]]);
+      const bev = 30, cg2 = cg, sg2 = sg;
+      cushion([[cg2, 0], [W / 2 - sg2, 0], [W / 2 - sg2 + bev, -CUSH], [cg2 - bev, -CUSH]]);
+      cushion([[W / 2 + sg2, 0], [W - cg2, 0], [W - cg2 + bev, -CUSH], [W / 2 + sg2 - bev, -CUSH]]);
+      cushion([[cg2, H], [W / 2 - sg2, H], [W / 2 - sg2 + bev, H + CUSH], [cg2 - bev, H + CUSH]]);
+      cushion([[W / 2 + sg2, H], [W - cg2, H], [W - cg2 + bev, H + CUSH], [W / 2 + sg2 - bev, H + CUSH]]);
+      cushion([[0, cg2], [0, H - cg2], [-CUSH, H - cg2 + bev], [-CUSH, cg2 - bev]]);
+      cushion([[W, cg2], [W, H - cg2], [W + CUSH, H - cg2 + bev], [W + CUSH, cg2 - bev]]);
       // 庫邊高光
       c.strokeStyle = 'rgba(255,255,255,0.14)'; c.lineWidth = 1.5;
       [[cg, 0, W / 2 - sg, 0], [W / 2 + sg, 0, W - cg, 0], [cg, H, W / 2 - sg, H], [W / 2 + sg, H, W - cg, H], [0, cg, 0, H - cg], [W, cg, W, H - cg]].forEach(l => { c.beginPath(); c.moveTo(l[0], l[1]); c.lineTo(l[2], l[3]); c.stroke(); });
@@ -216,12 +219,12 @@
         const g2 = c.createLinearGradient(x0, y0, x1, y1); g2.addColorStop(0, 'rgba(255,255,255,0.10)'); g2.addColorStop(0.55, 'rgba(0,0,0,0.04)'); g2.addColorStop(1, 'rgba(0,0,0,0.30)');
         c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) c.lineTo(pts[i][0], pts[i][1]); c.closePath(); c.fillStyle = g2; c.fill();
       }
-      shade([[cgc, 0], [W / 2 - sg2, 0], [W / 2 - sg2, -CUSH], [cgc - bc, -CUSH]], 0, -CUSH, 0, 0);
-      shade([[W / 2 + sg2, 0], [W - cgc, 0], [W - cgc + bc, -CUSH], [W / 2 + sg2, -CUSH]], 0, -CUSH, 0, 0);
-      shade([[cgc, H], [W / 2 - sg2, H], [W / 2 - sg2, H + CUSH], [cgc - bc, H + CUSH]], 0, H + CUSH, 0, H);
-      shade([[W / 2 + sg2, H], [W - cgc, H], [W - cgc + bc, H + CUSH], [W / 2 + sg2, H + CUSH]], 0, H + CUSH, 0, H);
-      shade([[0, cgc], [0, H - cgc], [-CUSH, H - cgc + bc], [-CUSH, cgc - bc]], -CUSH, 0, 0, 0);
-      shade([[W, cgc], [W, H - cgc], [W + CUSH, H - cgc + bc], [W + CUSH, cgc - bc]], W + CUSH, 0, W, 0);
+      shade([[cg2, 0], [W / 2 - sg2, 0], [W / 2 - sg2 + bev, -CUSH], [cg2 - bev, -CUSH]], 0, -CUSH, 0, 0);
+      shade([[W / 2 + sg2, 0], [W - cg2, 0], [W - cg2 + bev, -CUSH], [W / 2 + sg2 - bev, -CUSH]], 0, -CUSH, 0, 0);
+      shade([[cg2, H], [W / 2 - sg2, H], [W / 2 - sg2 + bev, H + CUSH], [cg2 - bev, H + CUSH]], 0, H + CUSH, 0, H);
+      shade([[W / 2 + sg2, H], [W - cg2, H], [W - cg2 + bev, H + CUSH], [W / 2 + sg2 - bev, H + CUSH]], 0, H + CUSH, 0, H);
+      shade([[0, cg2], [0, H - cg2], [-CUSH, H - cg2 + bev], [-CUSH, cg2 - bev]], -CUSH, 0, 0, 0);
+      shade([[W, cg2], [W, H - cg2], [W + CUSH, H - cg2 + bev], [W + CUSH, cg2 - bev]], W + CUSH, 0, W, 0);
       c.save(); c.beginPath(); c.rect(0, 0, W, H); c.clip();
       [[0, 0, 0, 18, 'v'], [0, H, 0, H - 18, 'v'], [0, 0, 18, 0, 'h'], [W, 0, W - 18, 0, 'h']].forEach(e => {
         const sh = c.createLinearGradient(e[0], e[1], e[2], e[3]); sh.addColorStop(0, 'rgba(0,0,0,0.34)'); sh.addColorStop(1, 'rgba(0,0,0,0)');
@@ -232,10 +235,10 @@
       c.save(); c.beginPath(); c.rect(-FR, -FR, ow, oh); c.rect(0, 0, W, H); c.clip('evenodd');
       P.POCKETS.forEach(p => {
         const rd = p.hr * (state.pocketScale || 1), sx = p.hx, sy = p.hy;
-        const bg = c.createLinearGradient(sx - rd, sy - rd, sx + rd, sy + rd); bg.addColorStop(0, '#3a1a10'); bg.addColorStop(0.5, '#220e08'); bg.addColorStop(1, '#120805');
+        const bg = c.createLinearGradient(sx - rd, sy - rd, sx + rd, sy + rd); bg.addColorStop(0, '#9a7a46'); bg.addColorStop(0.5, '#5c4222'); bg.addColorStop(1, '#2e1d0d');
         c.fillStyle = 'rgba(0,0,0,0.5)'; c.beginPath(); c.arc(sx, sy + 1.5, rd + 9.5, 0, TWO_PI); c.fill();
-        c.fillStyle = bg; c.beginPath(); c.arc(sx, sy, rd + 8, 0, TWO_PI); c.fill();
-        c.fillStyle = '#050302'; c.beginPath(); c.arc(sx, sy, rd + 4, 0, TWO_PI); c.fill();
+        c.fillStyle = bg; c.beginPath(); c.arc(sx, sy, rd + 5, 0, TWO_PI); c.fill();
+        c.fillStyle = '#050302'; c.beginPath(); c.arc(sx, sy, rd + 2.5, 0, TWO_PI); c.fill();
         c.strokeStyle = 'rgba(255,200,150,0.12)'; c.lineWidth = 1.2; c.beginPath(); c.arc(sx, sy, rd + 7.5, Math.PI * 0.9, Math.PI * 1.6); c.stroke();
       });
       c.restore();
@@ -252,10 +255,6 @@
         const gold = 'rgba(232,190,100,0.55)', pockets = P.POCKETS;
         function nearPocket(x, y) { for (let i = 0; i < pockets.length; i++) { const k = pockets[i]; if (Math.hypot(x - k.hx, y - k.hy) < 62) return true; } return false; }
         function dotAt(x, y, k) { if (nearPocket(x, y)) return; if (k % 5 === 0) { c.fillStyle = gold; c.beginPath(); c.arc(x, y, 2.4, 0, TWO_PI); c.fill(); } else { c.fillStyle = 'rgba(232,190,100,0.32)'; c.beginPath(); c.arc(x, y, 1.4, 0, TWO_PI); c.fill(); } }
-        let k = 0;
-        for (let x = 20; x < W; x += 12) { if (Math.abs(((x / (W / 8)) % 1) * (W / 8)) > 14 && Math.abs(x - W / 8 * Math.round(x / (W / 8))) > 14) { dotAt(x, -CUSH - 17, k); dotAt(x, H + CUSH + 17, k); } k++; }
-        k = 0;
-        for (let y = 20; y < H; y += 12) { if (Math.abs(y - H / 4 * Math.round(y / (H / 4))) > 14) { dotAt(-CUSH - 17, y, k); dotAt(W + CUSH + 17, y, k); } k++; }
         c.save(); c.beginPath(); c.rect(-FR, -FR, ow, oh); pockets.forEach(k => { c.moveTo(k.hx + 46, k.hy); c.arc(k.hx, k.hy, 46, 0, TWO_PI); }); c.clip('evenodd');
         c.strokeStyle = 'rgba(232,190,100,0.28)'; c.lineWidth = 1;
         [-CUSH - 25, -CUSH - 9].forEach(o => { rr(c, o, o, W - 2 * o, H - 2 * o, 14); c.stroke(); });
@@ -275,13 +274,7 @@
       [[C.HEAD_X, H / 2], [W / 2, H / 2], [C.FOOT_X, H / 2]].forEach(s => { c.beginPath(); c.arc(s[0], s[1], 2.6, 0, TWO_PI); c.fill(); });
       state.table = cv;
     }
-    function diamond(c, x, y) {                    // 木框上的圓形珍珠瞄準點
-      c.save(); c.fillStyle = 'rgba(20,8,2,0.7)'; c.beginPath(); c.arc(x, y + 1, 6.6, 0, TWO_PI); c.fill();
-      const pg = c.createRadialGradient(x - 2, y - 2, 0.5, x, y, 6); pg.addColorStop(0, '#fbf6e8'); pg.addColorStop(0.6, '#cfd8d8'); pg.addColorStop(1, '#8c9ba3');
-      c.fillStyle = pg; c.beginPath(); c.arc(x, y, 5.6, 0, TWO_PI); c.fill();
-      c.strokeStyle = 'rgba(255,255,255,0.55)'; c.lineWidth = 0.9; c.beginPath(); c.arc(x, y, 4.2, Math.PI * 1.1, Math.PI * 1.7); c.stroke();
-      c.restore();
-    }
+    function diamond(c, x, y) { c.beginPath(); c.moveTo(x, y - 6.5); c.lineTo(x + 4.2, y); c.lineTo(x, y + 6.5); c.lineTo(x - 4.2, y); c.closePath(); c.fill(); }
     function rr(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
 
     /* ---------- 球 ---------- */

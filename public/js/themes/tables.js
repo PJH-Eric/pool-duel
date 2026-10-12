@@ -6,7 +6,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
   const FELTS = {
-    classic: { name: '經典綠', c1: '#2faa5c', c2: '#1b8a4a', c3: '#106a36', cushion: '#17803f', cushionDark: '#0c5429' },
+    classic: { name: '經典綠', c1: '#23915f', c2: '#127148', c3: '#0a4d32', cushion: '#0f6a43', cushionDark: '#0a4a2f' },
     ocean:   { name: '深海藍', c1: '#2f7fc4', c2: '#1d5f9e', c3: '#103f6e', cushion: '#1b5a93', cushionDark: '#123f69' },
     wine:    { name: '酒紅',   c1: '#b0393e', c2: '#8a2227', c3: '#5a1216', cushion: '#7c1f24', cushionDark: '#541217' }
   };
