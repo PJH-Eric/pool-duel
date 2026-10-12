@@ -202,7 +202,7 @@
       const cg = C.CORNER_GAP, sg = C.SIDE_GAP;
       function cushion(pts) {
         c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) c.lineTo(pts[i][0], pts[i][1]); c.closePath();
-        c.fillStyle = felt.cushion; c.fill(); c.strokeStyle = felt.cushionDark; c.lineWidth = 2.5; c.stroke();
+        c.fillStyle = felt.cushion; c.fill(); c.strokeStyle = felt.cushionDark; c.lineWidth = 2.5; c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); c.lineTo(pts[1][0], pts[1][1]); c.stroke();
       }
       const bev = 30, cg2 = cg, sg2 = sg;
       cushion([[cg2, 0], [W / 2 - sg2, 0], [W / 2 - sg2 + bev, -CUSH], [cg2 - bev, -CUSH]]);
