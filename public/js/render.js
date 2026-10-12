@@ -187,68 +187,66 @@
       c.save(); c.beginPath(); c.rect(-CUSH, -CUSH, W + 2 * CUSH, H + 2 * CUSH); c.clip();
       const pat = c.createPattern(noiseTile(), 'repeat'); c.globalAlpha = 0.9; c.fillStyle = pat; c.fillRect(-CUSH, -CUSH, W + 2 * CUSH, H + 2 * CUSH);
       c.restore();
-      // 袋口喉部：庫邊斜端與袋框之間用桌布同色填滿
-      c.save(); c.beginPath(); c.rect(-CUSH, -CUSH, W + 2 * CUSH, H + 2 * CUSH); c.rect(0, 0, W, H); c.clip('evenodd');
-      P.POCKETS.forEach(p => {
-        const rd = p.hr * (state.pocketScale || 1), R = rd + 44;
-        const R2 = R;
-        c.save(); c.beginPath(); c.arc(p.hx, p.hy, R2, 0, TWO_PI); c.clip();
-        c.fillStyle = fg; c.fillRect(-CUSH, -CUSH, W + 2 * CUSH, H + 2 * CUSH);
-        c.globalAlpha = 0.9; c.fillStyle = pat; c.fillRect(-CUSH, -CUSH, W + 2 * CUSH, H + 2 * CUSH);
-        c.restore();
-      });
-      c.restore();
-      // 庫邊橡膠（梯形，靠袋口處斜切）
+      // 庫邊橡膠：整條畫到底，袋口的黑色「喉部」再蓋上去，斜端就是袋口切線，不會留下三角形或縫
       const cg = C.CORNER_GAP, sg = C.SIDE_GAP;
-      function cushion(pts) {
-        c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) c.lineTo(pts[i][0], pts[i][1]); c.closePath();
-        c.fillStyle = felt.cushion; c.fill(); c.strokeStyle = felt.cushionDark; c.lineWidth = 2.5; c.stroke();
-      }
-      const bev = 24, cg2 = cg - 16, sg2 = sg - 16;
-      cushion([[cg2, 0], [W / 2 - sg2, 0], [W / 2 - sg2 + bev, -CUSH], [cg2 - bev, -CUSH]]);
-      cushion([[W / 2 + sg2, 0], [W - cg2, 0], [W - cg2 + bev, -CUSH], [W / 2 + sg2 - bev, -CUSH]]);
-      cushion([[cg2, H], [W / 2 - sg2, H], [W / 2 - sg2 + bev, H + CUSH], [cg2 - bev, H + CUSH]]);
-      cushion([[W / 2 + sg2, H], [W - cg2, H], [W - cg2 + bev, H + CUSH], [W / 2 + sg2 - bev, H + CUSH]]);
-      cushion([[0, cg2], [0, H - cg2], [-CUSH, H - cg2 + bev], [-CUSH, cg2 - bev]]);
-      cushion([[W, cg2], [W, H - cg2], [W + CUSH, H - cg2 + bev], [W + CUSH, cg2 - bev]]);
-      // 庫邊高光
-      c.strokeStyle = 'rgba(255,255,255,0.14)'; c.lineWidth = 1.5;
-      [[cg, 0, W / 2 - sg, 0], [W / 2 + sg, 0, W - cg, 0], [cg, H, W / 2 - sg, H], [W / 2 + sg, H, W - cg, H], [0, cg, 0, H - cg], [W, cg, W, H - cg]].forEach(l => { c.beginPath(); c.moveTo(l[0], l[1]); c.lineTo(l[2], l[3]); c.stroke(); });
-      // 庫邊立體感：橡膠面由外（亮）到內（暗）的漸層，加上檯面貼庫處的陰影
-      function shade(pts, x0, y0, x1, y1) {
-        const g2 = c.createLinearGradient(x0, y0, x1, y1); g2.addColorStop(0, 'rgba(255,255,255,0.10)'); g2.addColorStop(0.55, 'rgba(0,0,0,0.04)'); g2.addColorStop(1, 'rgba(0,0,0,0.30)');
-        c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) c.lineTo(pts[i][0], pts[i][1]); c.closePath(); c.fillStyle = g2; c.fill();
-      }
-      shade([[cg2, 0], [W / 2 - sg2, 0], [W / 2 - sg2 + bev, -CUSH], [cg2 - bev, -CUSH]], 0, -CUSH, 0, 0);
-      shade([[W / 2 + sg2, 0], [W - cg2, 0], [W - cg2 + bev, -CUSH], [W / 2 + sg2 - bev, -CUSH]], 0, -CUSH, 0, 0);
-      shade([[cg2, H], [W / 2 - sg2, H], [W / 2 - sg2 + bev, H + CUSH], [cg2 - bev, H + CUSH]], 0, H + CUSH, 0, H);
-      shade([[W / 2 + sg2, H], [W - cg2, H], [W - cg2 + bev, H + CUSH], [W / 2 + sg2 - bev, H + CUSH]], 0, H + CUSH, 0, H);
-      shade([[0, cg2], [0, H - cg2], [-CUSH, H - cg2 + bev], [-CUSH, cg2 - bev]], -CUSH, 0, 0, 0);
-      shade([[W, cg2], [W, H - cg2], [W + CUSH, H - cg2 + bev], [W + CUSH, cg2 - bev]], W + CUSH, 0, W, 0);
+      const strips = [
+        [[0, 0], [W, 0], [W, -CUSH], [0, -CUSH]], [[0, H], [W, H], [W, H + CUSH], [0, H + CUSH]],
+        [[0, 0], [0, H], [-CUSH, H], [-CUSH, 0]], [[W, 0], [W, H], [W + CUSH, H], [W + CUSH, 0]]
+      ];
+      const shadeDir = [[0, -CUSH, 0, 0], [0, H + CUSH, 0, H], [-CUSH, 0, 0, 0], [W + CUSH, 0, W, 0]];
+      function poly(pts) { c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) c.lineTo(pts[i][0], pts[i][1]); c.closePath(); }
+      strips.forEach((pts, i) => {
+        poly(pts); c.fillStyle = felt.cushion; c.fill();
+        const d = shadeDir[i], g2 = c.createLinearGradient(d[0], d[1], d[2], d[3]);
+        g2.addColorStop(0, 'rgba(255,255,255,0.10)'); g2.addColorStop(0.55, 'rgba(0,0,0,0.04)'); g2.addColorStop(1, 'rgba(0,0,0,0.30)');
+        poly(pts); c.fillStyle = g2; c.fill();
+      });
+      // 庫邊鼻線（貼桌面的那條邊）
+      c.strokeStyle = felt.cushionDark; c.lineWidth = 2.5; c.beginPath(); c.rect(0, 0, W, H); c.stroke();
+      c.strokeStyle = 'rgba(255,255,255,0.14)'; c.lineWidth = 1.5; c.beginPath(); c.rect(-0.8, -0.8, W + 1.6, H + 1.6); c.stroke();
+      // 桌面邊緣陰影
       c.save(); c.beginPath(); c.rect(0, 0, W, H); c.clip();
-      [[0, 0, 0, 18, 'v'], [0, H, 0, H - 18, 'v'], [0, 0, 18, 0, 'h'], [W, 0, W - 18, 0, 'h']].forEach(e => {
+      [[0, 0, 0, 18], [0, H, 0, H - 18], [0, 0, 18, 0], [W, 0, W - 18, 0]].forEach(e => {
         const sh = c.createLinearGradient(e[0], e[1], e[2], e[3]); sh.addColorStop(0, 'rgba(0,0,0,0.34)'); sh.addColorStop(1, 'rgba(0,0,0,0)');
         c.fillStyle = sh; c.fillRect(0, 0, W, H);
       });
       c.restore();
-      // 袋口：皮革袋框（只畫在檯面外）
+      // 袋口外形 = 黑洞圓 + 兩個袋角（庫邊尖端）的凸包：兩側斜邊就是袋口斜切面
+      function mouth(p, rd) {
+        const pts = [];
+        for (let k = 0; k < 96; k++) { const t = k / 96 * TWO_PI; pts.push([p.hx + Math.cos(t) * rd, p.hy + Math.sin(t) * rd]); }
+        const corner = p.hx < W / 2 - 1 || p.hx > W / 2 + 1;
+        if (corner) {
+          const sx = p.hx < W / 2 ? 1 : -1, sy = p.hy < H / 2 ? 1 : -1, x0 = p.hx < W / 2 ? 0 : W, y0 = p.hy < H / 2 ? 0 : H;
+          pts.push([x0 + sx * cg, y0], [x0, y0 + sy * cg]);
+        } else {
+          const y0 = p.hy < H / 2 ? 0 : H;
+          pts.push([W / 2 - sg, y0], [W / 2 + sg, y0]);
+        }
+        pts.sort((u, v) => u[0] - v[0] || u[1] - v[1]);
+        const cr = (o, a, b2) => (a[0] - o[0]) * (b2[1] - o[1]) - (a[1] - o[1]) * (b2[0] - o[0]);
+        const lo = [], up = [];
+        for (const q of pts) { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], q) <= 0) lo.pop(); lo.push(q); }
+        for (let i = pts.length - 1; i >= 0; i--) { const q = pts[i]; while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], q) <= 0) up.pop(); up.push(q); }
+        lo.pop(); up.pop(); return lo.concat(up);
+      }
+      // 袋口只畫在桌面之外（桌面本身保持完整）
       c.save(); c.beginPath(); c.rect(-FR, -FR, ow, oh); c.rect(0, 0, W, H); c.clip('evenodd');
       P.POCKETS.forEach(p => {
-        const rd = p.hr * (state.pocketScale || 1), sx = p.hx, sy = p.hy;
-        const bg = c.createLinearGradient(sx - rd, sy - rd, sx + rd, sy + rd); bg.addColorStop(0, '#4a3624'); bg.addColorStop(0.5, '#2c1d10'); bg.addColorStop(1, '#170d07');
-        c.fillStyle = 'rgba(0,0,0,0.35)'; c.beginPath(); c.arc(sx, sy + 1, rd + 4.5, 0, TWO_PI); c.fill();
-        c.fillStyle = bg; c.beginPath(); c.arc(sx, sy, rd + 3.5, 0, TWO_PI); c.fill();
-        c.fillStyle = '#050302'; c.beginPath(); c.arc(sx, sy, rd + 2, 0, TWO_PI); c.fill();
-        c.strokeStyle = 'rgba(255,200,150,0.06)'; c.lineWidth = 1.2; c.beginPath(); c.arc(sx, sy, rd + 7.5, Math.PI * 0.9, Math.PI * 1.6); c.stroke();
+        const rd = p.hr * (state.pocketScale || 1);
+        // 木框上的細皮革邊（只在木頭上看得到）
+        c.save(); c.beginPath(); c.rect(-FR, -FR, ow, oh); c.rect(-CUSH, -CUSH, W + 2 * CUSH, H + 2 * CUSH); c.clip('evenodd');
+        c.fillStyle = '#2a1a0e'; c.beginPath(); c.arc(p.hx, p.hy, rd + 3.5, 0, TWO_PI); c.fill();
+        c.restore();
+        const hole = c.createRadialGradient(p.hx, p.hy, rd * 0.2, p.hx, p.hy, rd * 1.6);
+        hole.addColorStop(0, '#000'); hole.addColorStop(0.6, '#050302'); hole.addColorStop(1, '#0d0806');
+        poly(mouth(p, rd)); c.fillStyle = hole; c.fill();
       });
       c.restore();
-      // 袋口
-      P.POCKETS.forEach((p, i) => {
-        const rad = p.hr * (state.pocketScale || 1), sx = p.hx, sy = p.hy;
-        const hole = c.createRadialGradient(sx - 4, sy - 4, 2, sx, sy, rad); hole.addColorStop(0, '#0a0706'); hole.addColorStop(1, '#000');
-        c.fillStyle = hole; c.beginPath(); c.arc(sx, sy, rad, 0, TWO_PI); c.fill();
-        c.strokeStyle = 'rgba(0,0,0,0.9)'; c.lineWidth = 3; c.beginPath(); c.arc(sx, sy, rad + 0.5, 0, TWO_PI); c.stroke();
-        c.strokeStyle = 'rgba(255,255,255,0.07)'; c.lineWidth = 2; c.beginPath(); c.arc(sx, sy, rad - 4, 0.15 * Math.PI, 0.85 * Math.PI); c.stroke();
+      // 洞內一點點反光，讓洞有深度
+      P.POCKETS.forEach(p => {
+        const rd = p.hr * (state.pocketScale || 1);
+        c.strokeStyle = 'rgba(255,255,255,0.06)'; c.lineWidth = 2; c.beginPath(); c.arc(p.hx, p.hy, rd - 4, 0.15 * Math.PI, 0.85 * Math.PI); c.stroke();
       });
       // 木框雕花：沿著框邊一排小金點與雙金線（避開袋口與瞄準點）
       (function () {
