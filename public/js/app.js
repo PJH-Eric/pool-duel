@@ -6,12 +6,13 @@
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const firstChar = n => Array.from(String(n || '?'))[0] || '?';
   const App = { screen: 'home', game: null, back: 'home', setupNote: '' };
+  let gameStatusText = '', gameStatusMine = false, gameStatusToastTimer = 0;
   root.PoolApp = App;
 
   /* ---------- 小工具 ---------- */
   let gtT = 0;
   App.toast = function (text, ms) {
-    if (App.screen === 'game' && App.game && App.game.ui && App.game.ui.toast) { App.game.ui.toast(text); return; }   // 對局中提示一律顯示在桌面上方
+    if (App.screen === 'game' && App.game && App.game.ui && App.game.ui.toast) { App.game.ui.toast(text); return; }   // 對局中提示顯示在球員資訊列
     const el = $('#globalToast'); el.textContent = text; el.classList.add('show');
     clearTimeout(gtT); gtT = setTimeout(() => el.classList.remove('show'), ms || 2600);
   };
@@ -299,7 +300,14 @@
   }
   App.ui = {
     hud(vm) {
-      const st = $('#gStatus'); st.textContent = vm.status; st.classList.toggle('mine', vm.status.indexOf('輪到你') === 0 || vm.status === '請做出選擇');
+      const st = $('#gStatus');
+      gameStatusText = vm.status;
+      gameStatusMine = vm.status.indexOf('輪到你') === 0 || vm.status === '請做出選擇';
+      if (!st.dataset.toastActive) {
+        st.textContent = gameStatusText;
+        st.classList.toggle('mine', gameStatusMine);
+        st.classList.remove('toast-message', 'toast-foul');
+      }
       let html = '';
       vm.seats.forEach(s => {
         const tag = s.you ? '<span class="tag">你</span>' : '';
@@ -325,8 +333,18 @@
     fine(d) { $('#fineVal').textContent = (d >= 0 ? '+' : '') + d.toFixed(2) + '°'; fineSlider.render(); },
     spin(u, v) { setSpinDot(u, v); },
     toast(text, kind) {
-      const el = $('#toast'); el.textContent = text; el.className = 'toast show' + (kind === 'foul' ? ' foul' : '');
-      clearTimeout(el.__t); el.__t = setTimeout(() => el.classList.remove('show'), 2800);
+      const el = $('#gStatus');
+      el.dataset.toastActive = 'true';
+      el.textContent = text;
+      el.classList.remove('mine', 'toast-message', 'toast-foul');
+      el.classList.add(kind === 'foul' ? 'toast-foul' : 'toast-message');
+      clearTimeout(gameStatusToastTimer);
+      gameStatusToastTimer = setTimeout(() => {
+        delete el.dataset.toastActive;
+        el.textContent = gameStatusText;
+        el.classList.toggle('mine', gameStatusMine);
+        el.classList.remove('toast-message', 'toast-foul');
+      }, 2800);
     },
     timer(sec, mine) {
       const el = $('#gTimer'), wrap = $('#gTimerWrap');
