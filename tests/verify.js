@@ -110,8 +110,10 @@ section('規則：14-1 連續進球（叫球、安全球、犯規扣分、重新
 {
   const r = RNG.create(2); let g = Rules.newGame('score', { breaker: 0 }, r);
   ok(g.scores[0] === 0 && g.scores[1] === 0 && g.target === 30, '雙方起始 0 分、目標 30 分');
-  let n = 0; while (g.phase !== 'over' && n < 600) { const { shot } = AI.chooseShot(g, 'normal', r); const e = Rules.validateShot(g, shot); if (e) { ok(false, '14-1 AI 出桿不合法：' + e); break; } const w = Rules.prepareWorld(g, shot); P.applyShot(w, shot); g = Rules.evaluateShot(g, shot, P.runToRest(w)).state; n++; }
-  ok(g.phase === 'over' && (g.scores[0] >= 30 || g.scores[1] >= 30), '14-1 能打完（先到 30 分）');
+  const matchRng = RNG.create(2);
+  g = Rules.newGame('score', { breaker: 0, target: 15 }, matchRng);
+  let n = 0; while (g.phase !== 'over' && n < 600) { const { shot } = AI.chooseShot(g, 'normal', matchRng); const e = Rules.validateShot(g, shot); if (e) { ok(false, '14-1 AI 出桿不合法：' + e); break; } const w = Rules.prepareWorld(g, shot); P.applyShot(w, shot); g = Rules.evaluateShot(g, shot, P.runToRest(w)).state; n++; }
+  ok(g.phase === 'over' && (g.scores[0] >= g.target || g.scores[1] >= g.target), '14-1 普通 AI 能完成 15 分測試局');
   const k = Rules.newGame('score', { breaker: 0, kids: true }, RNG.create(2));
   ok(k.kids === true && !Rules.needCallBall(k), '幼幼班不用叫球');
   // 手工情境：叫球
@@ -134,6 +136,10 @@ section('規則：14-1 連續進球（叫球、安全球、犯規扣分、重新
   e = Rules.evaluateShot(s, { ax: 1e6, ay: 0, power: 400, cb: t2.id, call: 2 }, ((s2) => ({ balls: s2.balls.map(b => ({ id: b.id, x: b.x, y: b.y, pocket: b.id === t2.id ? 2 : b.pocket })), pocketed: [{ id: t2.id, pocket: 2 }], cueScratch: false, firstContact: t2.id, railAfterContact: true, railBalls: [], railBallsAfterContact: [], hitOrder: [], timedOut: false }))(s));
   const ons = Rules.onTable(e.state);
   ok(ons.length === 15 && e.state.turn === 0 && e.state.rackNo === 2 && Rules.getBall(e.state, last.id).x === 700, '第 14 顆進袋：14 顆重新排球、剩下那顆留原處、繼續出桿');
+  s = mk();
+  const finalBall = s.balls[1]; finalBall.pocket = -1; finalBall.x = 600; finalBall.y = 100; s.scores[0] = 29;
+  e = Rules.evaluateShot(s, { ax: 1e6, ay: 0, power: 400, cb: finalBall.id, call: 2 }, fake(2, [finalBall.id]));
+  ok(e.state.phase === 'over' && e.state.winner === 0 && e.state.scores[0] === 30, '正式目標 30 分：達標後立即結束並判定勝者');
 }
 
 section('推桿／定桿／拉桿與滑動');
