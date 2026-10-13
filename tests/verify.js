@@ -15,6 +15,9 @@ function ok(c, m) { if (c) { pass++; console.log('  ✓ ' + m); } else { fail++;
 const setup = (kind, seed) => P.makeWorld([{ id: 0, x: 250, y: 250, pocket: -1 }].concat(P.rack(kind, RNG.create(seed))));
 const shotOf = (dx, dy, power) => Object.assign({}, P.quantizeDir(dx, dy), { power, sx: 0, sy: 0 });
 
+section('14-1 叫球選擇');
+require('./call-selection-check')();
+
 section('回合倒數與延長');
 {
   const fake = Object.create(Game.prototype);

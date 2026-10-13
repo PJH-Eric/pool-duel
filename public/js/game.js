@@ -261,7 +261,10 @@
     selectPocket(i) {
       if (this.phase !== 'aiming') return;
       if (Rules.needCall(this.state)) { this.call = i; }
-      else if (Rules.needCallBall(this.state)) { this.call = i; this.safety = false; }
+      else if (Rules.needCallBall(this.state)) {
+        if (this.callBall < 0) return;
+        this.call = i; this.safety = false;
+      }
       else return;
       Sound.sfx.click(); this.pushControls(); this.refresh();
     }
@@ -281,8 +284,16 @@
         if (this.phase !== 'aiming') return;
         Sound.unlock();
         const { px, py } = this._pt(e), t = this.r.toTable(px, py);
-        if (Rules.needCall(this.state) || Rules.needCallBall(this.state)) { const pk = this.r.pocketHit(px, py); if (pk >= 0) { this.selectPocket(pk); return; } }
-        if (Rules.needCallBall(this.state)) { const id = this.ballHit(px, py); if (id > 0) { this.selectBall(id); return; } }
+        const needCallBall = Rules.needCallBall(this.state);
+        if (needCallBall && this.callBall < 0) {
+          const id = this.ballHit(px, py);
+          if (id > 0) { this.selectBall(id); return; }
+          if (this.r.pocketHit(px, py) >= 0) return;
+        } else if (Rules.needCall(this.state) || needCallBall) {
+          const pk = this.r.pocketHit(px, py);
+          if (pk >= 0) { this.selectPocket(pk); return; }
+        }
+        if (needCallBall) { const id = this.ballHit(px, py); if (id > 0) { this.selectBall(id); return; } }
         const c = this.cuePos();
         if (this.hand && Math.hypot(t.x - c.x, t.y - c.y) < C.R * 3.2) {
           this.dragMode = 'hand'; this.dragOff = { x: c.x - t.x, y: c.y - t.y };
@@ -300,7 +311,10 @@
         if (!this.dragMode) {                              // 叫球：滑鼠移到可點的球或袋口時變成手指，不用十字
           let hot = false;
           if (this.phase === 'aiming' && (Rules.needCall(this.state) || Rules.needCallBall(this.state))) {
-            const q = this._pt(e); hot = this.r.pocketHit(q.px, q.py) >= 0 || (Rules.needCallBall(this.state) && this.ballHit(q.px, q.py) > 0);
+            const q = this._pt(e), needCallBall = Rules.needCallBall(this.state);
+            const ballHot = needCallBall && this.ballHit(q.px, q.py) > 0;
+            const pocketHot = (!needCallBall || this.callBall >= 0) && this.r.pocketHit(q.px, q.py) >= 0;
+            hot = ballHot || pocketHot;
           }
           cv.classList.toggle('hot', hot);
         }
