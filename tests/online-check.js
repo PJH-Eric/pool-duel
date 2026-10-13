@@ -3,10 +3,12 @@
 'use strict';
 const path = require('path');
 process.env.PORT = process.env.PORT || '0';
+const RNG = require('../public/js/rng.js');
+// 固定伺服器擺球種子，讓完整對局與耗時可重現；只影響這個測試程序。
+RNG.newSeed = () => 'online-check-1';
 const srv = require('../server.js');
 const AI = require('../public/js/ai.js');
 const Rules = require('../public/js/rules.js');
-const RNG = require('../public/js/rng.js');
 
 let pass = 0, failN = 0;
 function ok(cond, name) { if (cond) { pass++; console.log('  ✓ ' + name); } else { failN++; console.log('  ✗ ' + name); } }
