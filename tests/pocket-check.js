@@ -125,9 +125,13 @@ for (const pocket of P.POCKETS.filter(p => p.corner)) {
     const supportRadius = pocket.hr * scale - C.R / 2;
     const inside = shot(pocket.hx + ux * (supportRadius - 0.25), pocket.hy + uy * (supportRadius - 0.25), 0, 0, scale);
     assert.equal(inside.balls[0].pocket, P.POCKETS.indexOf(pocket), '深入角袋後不能懸停在袋內');
-    const x = pocket.hx + ux * (supportRadius + 0.25), y = pocket.hy + uy * (supportRadius + 0.25);
+    // 補償：已停住、球心落在可見洞口內（過半在洞上）的球要掉進去，不可懸在洞緣。
+    const rim = pocket.hr * scale + C.POCKET_REST_ASSIST;
+    const lip = shot(pocket.hx + ux * (rim - 0.25), pocket.hy + uy * (rim - 0.25), 0, 0, scale);
+    assert.equal(lip.balls[0].pocket, P.POCKETS.indexOf(pocket), '停在洞緣、過半在洞上的球必須掉進角袋');
+    const x = pocket.hx + ux * (rim + 0.25), y = pocket.hy + uy * (rim + 0.25);
     const edge = shot(x, y, 0, 0, scale);
-    assert.equal(edge.balls[0].pocket, -1, '袋緣有支撐的球不能被吸入角袋');
+    assert.equal(edge.balls[0].pocket, -1, '球心仍在洞外的靜止球不能被吸入角袋');
     assert.ok(Math.hypot(edge.balls[0].x - x, edge.balls[0].y - y) < 0.001, '袋緣靜止球不能被移動');
   }
 }

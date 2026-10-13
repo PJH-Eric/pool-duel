@@ -43,6 +43,8 @@
       var supportRadius = p.corner
         ? p.hr * w.pocketScale - R / 2
         : capRadius(p, w.pocketScale) + R * 0.08;
+      // 補償：球已幾乎停在袋緣、球心落在可見洞口內（過半在洞上）時，不可懸在洞緣，必須掉進去。
+      if (p.corner && speed2 <= C.POCKET_REST_V * C.POCKET_REST_V) supportRadius = p.hr * w.pocketScale + C.POCKET_REST_ASSIST;
       if (distance2 >= supportRadius * supportRadius || distance2 < 1e-9) continue;
       var distance = Math.sqrt(distance2);
       b.vx = -dx / distance * C.POCKET_FALL_SPEED;
