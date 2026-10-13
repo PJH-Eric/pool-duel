@@ -31,6 +31,23 @@
     return Math.max(0, p.hr * (scale || 1) - R + easing);
   }
 
+  function rollIntoCorner(w, b) {
+    if (b.vx * b.vx + b.vy * b.vy >= C.CORNER_FALL_SPEED * C.CORNER_FALL_SPEED) return;
+    for (var pi = 0; pi < POCKETS.length; pi++) {
+      var p = POCKETS[pi];
+      if (!p.corner) continue;
+      var dx = b.x - p.hx, dy = b.y - p.hy;
+      var distance2 = dx * dx + dy * dy;
+      // 球心深入袋內、球體大半失去檯面支撐後才滑落；袋緣與入口不吸球。
+      var supportRadius = p.hr * w.pocketScale - R / 2;
+      if (distance2 >= supportRadius * supportRadius || distance2 < 1e-9) continue;
+      var distance = Math.sqrt(distance2);
+      b.vx = -dx / distance * C.CORNER_FALL_SPEED;
+      b.vy = -dy / distance * C.CORNER_FALL_SPEED;
+      return;
+    }
+  }
+
   var pocketGeometryCache = {};
   function pocketGeometry(p, scale) {
     scale = scale || 1;
@@ -283,7 +300,7 @@
         wallCollide(w, b);
         jawCollide(w, b);
         pocketGuideCollide(w, b);
-        capturePocket(w, b, b.x, b.y);
+        if (!capturePocket(w, b, b.x, b.y)) rollIntoCorner(w, b);
       }
       w.t += h;
     }

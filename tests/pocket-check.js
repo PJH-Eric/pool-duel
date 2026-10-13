@@ -86,13 +86,29 @@ shot(16, 16, Math.cos(angle) * 900, Math.sin(angle) * 900, 1);
 
 // 單球慢速斜向進底袋後，球心停在黑洞視覺範圍內，卻未被判進袋。
 const bottomPocketAngle = 50 * Math.PI / 180;
-for (const right of [false, true]) {
-  const pocketIndex = right ? 5 : 3;
-  const world = P.makeWorld([{ id: 2, x: right ? C.W - 20 : 20, y: C.H - 34 }]);
+for (const right of [false, true]) for (const bottom of [false, true]) {
+  const pocketIndex = (bottom ? 3 : 0) + (right ? 2 : 0);
+  const world = P.makeWorld([{ id: 2, x: right ? C.W - 20 : 20, y: bottom ? C.H - 34 : 34 }]);
   world.balls[0].vx = (right ? 1 : -1) * Math.cos(bottomPocketAngle) * 180;
-  world.balls[0].vy = Math.sin(bottomPocketAngle) * 180;
+  world.balls[0].vy = (bottom ? 1 : -1) * Math.sin(bottomPocketAngle) * 180;
   P.runToRest(world);
   assert.equal(world.balls[0].pocket, pocketIndex, '單球慢速斜向進底袋應確實進袋');
+  checked++;
+}
+
+// 已深入袋內而失去支撐的球會滑落；仍在袋緣上的球必須留在原處。
+for (const pocket of P.POCKETS.filter(p => p.corner)) {
+  const ux = pocket.x ? -Math.SQRT1_2 : Math.SQRT1_2;
+  const uy = pocket.y ? -Math.SQRT1_2 : Math.SQRT1_2;
+  for (const scale of [1, C.POCKET_SCALE_BIG]) {
+    const supportRadius = pocket.hr * scale - C.R / 2;
+    const inside = shot(pocket.hx + ux * (supportRadius - 0.25), pocket.hy + uy * (supportRadius - 0.25), 0, 0, scale);
+    assert.equal(inside.balls[0].pocket, P.POCKETS.indexOf(pocket), '深入角袋後不能懸停在袋內');
+    const x = pocket.hx + ux * (supportRadius + 0.25), y = pocket.hy + uy * (supportRadius + 0.25);
+    const edge = shot(x, y, 0, 0, scale);
+    assert.equal(edge.balls[0].pocket, -1, '袋緣有支撐的球不能被吸入角袋');
+    assert.ok(Math.hypot(edge.balls[0].x - x, edge.balls[0].y - y) < 0.001, '袋緣靜止球不能被移動');
+  }
 }
 
 // 高速斜擦小範圍時，單一步的兩端都可能在洞外；仍須偵測實際通過洞內的路徑。

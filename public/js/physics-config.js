@@ -19,12 +19,13 @@
     E_RAIL_T: 0.92,             // 庫邊切向保留
     E_JAW: 0.6,                 // 袋口尖角彈性
     JAW_R: 5,                   // 袋口尖角圓半徑
-    CORNER_GAP: 33,             // 角袋：庫邊從角落起算的缺口，微幅收窄入口
+    CORNER_GAP: 33.3,           // 角袋：庫邊從角落起算的缺口，微幅收窄入口
     SIDE_GAP: 27,               // 邊袋：中點兩側缺口半寬
     // 進袋門檻依球半徑計算；中袋只容許極小比例跨過可見袋緣。
     HOLE_R_CORNER: 26, HOLE_R_SIDE: 20,    // 黑洞半徑
     HOLE_OFF_CORNER: 20, HOLE_OFF_SIDE: 22,  // 袋心移到檯面外，由導槽連接庫邊入口
     CORNER_CAPTURE_EASE: 0.5, // 角袋只補償極小的物理取樣誤差，不改變可見袋口
+    CORNER_FALL_SPEED: 20,      // 球已深入角袋且慢下來時，沿袋內斜面滑向袋心
     SIDE_CAPTURE_EASE_RATIO: 0.02, // 中袋只放寬球半徑的 2%，不改變可見洞口
     POCKET_SCALE_BIG: 1.25,     // 「加大袋口」倍率
     MAX_SIM_TIME: 30,           // 單桿模擬時間上限（秒）
