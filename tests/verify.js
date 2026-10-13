@@ -7,9 +7,11 @@ const { spawnSync } = require('child_process');
 const D = path.join(__dirname, '..', 'public', 'js') + path.sep;
 const P = require(D + 'physics.js'), Rules = require(D + 'rules.js'), AI = require(D + 'ai.js'), RNG = require(D + 'rng.js'), C = require(D + 'physics-config.js');
 const Turn = require(D + 'turn-config.js'), Game = require(D + 'game.js').PoolGame;
+const { play, playMatchesParallel } = require('./ai-match');
 require('./game-status-check')();
 const full = process.argv.includes('--full') && !process.argv.includes('--quick');
 let pass = 0, fail = 0;
+let fullAIWork = Promise.resolve();
 function section(t) { console.log('\n● ' + t); }
 function ok(c, m) { if (c) { pass++; console.log('  ✓ ' + m); } else { fail++; console.log('  ✗ ' + m); } }
 const setup = (kind, seed) => P.makeWorld([{ id: 0, x: 250, y: 250, pocket: -1 }].concat(P.rack(kind, RNG.create(seed))));
@@ -218,16 +220,6 @@ section('跳桿');
 
 section('AI');
 {
-  function play(kind, a, b, seed) {
-    const rng = RNG.create(seed); let s = Rules.newGame(kind, { breaker: seed % 2, kids: a === 'kids' && b === 'kids' }, rng), n = 0; const lv = [a, b];
-    while (s.phase !== 'over' && n < 1000) {
-      if (s.phase === 'choice') { s = Rules.resolveChoice(s, Rules.defaultChoice(s), rng).state; continue; }
-      const { shot } = AI.chooseShot(s, lv[s.turn], rng);
-      if (Rules.validateShot(s, shot)) return { err: true };
-      const w = Rules.prepareWorld(s, shot); P.applyShot(w, shot); s = Rules.evaluateShot(s, shot, P.runToRest(w)).state; n++;
-    }
-    return { s, n };
-  }
   let bad = 0; for (let i = 1; i <= 6; i++) for (const k of ['nine', 'eight', 'score']) { const r = play(k, 'kids', 'kids', i); if (r.err || r.s.phase !== 'over') bad++; }
   ok(bad === 0, '幼幼班 AI 在三種玩法都只出合法擊球並打得完（18 局）');
   if (full) {
@@ -238,26 +230,46 @@ section('AI');
       console.log(`  困難／簡單 AI：${i}/${N} 場完成，本場 ${r.n} 桿`);
     }
     ok(hw >= N * 0.7, `14-1：困難 AI 對簡單 AI 贏 ${hw}/${N}（≥70%）`);
-    let mw = 0;
-    for (let i = 1; i <= N; i++) {
-      const sw = i % 2, lv = sw ? ['hard', 'myth'] : ['myth', 'hard'];
-      const r = play('score', lv[0], lv[1], i); if (r.s.winner === (sw ? 1 : 0)) mw++;
-      console.log(`  神話／困難 AI：${i}/${N} 場完成，本場 ${r.n} 桿`);
-    }
-    ok(mw >= N * 0.7, `14-1：神話 AI 對困難 AI 贏 ${mw}/${N}（≥70%）`);
-    console.log(`  AI 勝率統計耗時 ${((Date.now() - startedAt) / 1000).toFixed(1)} 秒`);
+    const mythMatches = Array.from({ length: N }, (_, index) => {
+      const seed = index + 1;
+      const sw = seed % 2;
+      const levels = sw ? ['hard', 'myth'] : ['myth', 'hard'];
+      return { kind: 'score', a: levels[0], b: levels[1], seed, expectedWinner: sw ? 1 : 0 };
+    });
+    const mythStartedAt = Date.now();
+    let completed = 0;
+    fullAIWork = playMatchesParallel(mythMatches, (result, match) => {
+      completed++;
+      const mythWon = !result.err && result.s.winner === match.expectedWinner;
+      console.log(`  神話／困難 AI：${completed}/${N} 場完成，${mythWon ? '神話勝' : '神話未勝'}，${result.n || 0} 桿（種子 ${match.seed}）`);
+    }).then(mythResults => {
+      const mw = mythResults.reduce((wins, result, index) => {
+        return wins + Number(!result.err && result.s.phase === 'over' && result.s.winner === mythMatches[index].expectedWinner);
+      }, 0);
+      ok(mw >= N * 0.7, `14-1：神話 AI 對困難 AI 贏 ${mw}/${N}（≥70%）`);
+      console.log(`  神話／困難組並行耗時 ${((Date.now() - mythStartedAt) / 1000).toFixed(1)} 秒`);
+      console.log(`  AI 勝率統計耗時 ${((Date.now() - startedAt) / 1000).toFixed(1)} 秒`);
+    });
   } else {
     console.log('  （快速模式：略過 20 場 AI 勝率統計；完整驗證請執行 npm run verify:full）');
   }
 }
 
-section('線上房間／協定');
-if (process.argv.includes('--no-online')) console.log('  （略過）');
-else {
-  const r = spawnSync(process.execPath, [path.join(__dirname, 'online-check.js')], { encoding: 'utf8', timeout: 180000 });
-  const m = /結果：(\d+) 通過、(\d+) 失敗/.exec(r.stdout || '');
-  ok(!!m && +m[2] === 0, '線上整合檢查 ' + (m ? `${m[1]} 通過、${m[2]} 失敗` : '（無法執行：' + (r.stderr || '').slice(0, 120) + '）'));
+async function finishVerification() {
+  await fullAIWork;
+  section('線上房間／協定');
+  if (process.argv.includes('--no-online')) console.log('  （略過）');
+  else {
+    const r = spawnSync(process.execPath, [path.join(__dirname, 'online-check.js')], { encoding: 'utf8', timeout: 180000 });
+    const m = /結果：(\d+) 通過、(\d+) 失敗/.exec(r.stdout || '');
+    ok(!!m && +m[2] === 0, '線上整合檢查 ' + (m ? `${m[1]} 通過、${m[2]} 失敗` : '（無法執行：' + (r.stderr || '').slice(0, 120) + '）'));
+  }
+
+  console.log(`\n總結果：${pass} 通過、${fail} 失敗`);
+  process.exitCode = fail ? 1 : 0;
 }
 
-console.log(`\n總結果：${pass} 通過、${fail} 失敗`);
-process.exit(fail ? 1 : 0);
+finishVerification().catch(error => {
+  console.error('驗證執行失敗：', error);
+  process.exitCode = 1;
+});
