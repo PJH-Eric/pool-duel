@@ -106,13 +106,12 @@
   <section id="screen-game" class="screen" aria-label="對局">
     <header class="g-top">
       <button id="gBack" class="btn round back" aria-label="離開對局"><span class="ico ico-back"></span></button>
-      <div id="gStatus" class="g-status" role="status" aria-live="polite">準備中…</div>
       <div class="bar-right"><span class="lat-slot"></span><button class="btn round gear" data-gear aria-label="設定"><span class="ico ico-gear"></span></button></div>
     </header>
     <div class="g-scoreboard" role="group" aria-label="對局比分與球況">
       <div id="gSeats" class="seat-list" role="group" aria-label="玩家進袋紀錄"></div>
       <div class="g-score-center"><div class="timer" id="gTimerWrap"><span class="lbl">倒數</span><span id="gTimer" class="timer-dot">--</span></div></div>
-      <div class="g-score-meta"><span id="gKind" class="chip">九球</span><div id="gHint" class="hint-box"></div><div id="gSpec" class="spec-note hidden"></div></div>
+      <div class="g-score-meta"><div id="gStatus" class="g-status" role="status" aria-live="polite">準備中…</div><div id="gSpec" class="spec-note hidden"></div></div>
     </div>
     <div class="g-main">
       <aside id="gPanel" class="panel chat-panel hidden" aria-label="聊天室資訊欄" aria-hidden="true">

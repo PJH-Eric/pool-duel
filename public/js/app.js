@@ -299,9 +299,7 @@
   }
   App.ui = {
     hud(vm) {
-      $('#gKind').textContent = vm.kindName;
       const st = $('#gStatus'); st.textContent = vm.status; st.classList.toggle('mine', vm.status.indexOf('輪到你') === 0 || vm.status === '請做出選擇');
-      $('#gHint').textContent = vm.hint;
       let html = '';
       vm.seats.forEach(s => {
         const tag = s.you ? '<span class="tag">你</span>' : '';
@@ -314,7 +312,6 @@
           '<div class="potted-row"><span class="potted-label">進袋</span><div class="potted-history" role="img" aria-label="' + esc(historyLabel) + '">' + history + '</div></div></div>';
       });
       $('#gSeats').innerHTML = html;
-      if (vm.practice) $('#gHint').textContent = vm.hint + ' ・ 已進袋 ' + (vm.potted || 0) + ' 顆';
     },
     controls(c) {
       const dis = !c.enabled;
