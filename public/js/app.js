@@ -269,6 +269,7 @@
     const lv = LEVEL_INFO.find(l => l.id === cfg.level);
     const seats = cfg.mode === 'practice' ? [{ name: you }, { name: '練習' }] : [{ name: you }, { name: '電腦（' + (lv ? lv.name : '') + '）' }];
     $('#gChatBox').classList.add('hidden'); $('#gSpec').classList.add('hidden');
+    $('#gPanel').classList.add('hidden'); $('#gDrawer').classList.add('hidden');
     $('#btnRack').classList.toggle('hidden', cfg.mode !== 'practice');
     g.practiceCount = 0;
     g.start({ mode: cfg.mode, kind: cfg.kind, level: cfg.mode === 'practice' ? 'kids' : cfg.level, mySeat: 0, seats, bigPockets: cfg.level === 'kids' });
@@ -280,6 +281,7 @@
     const g = ensureGame(); g.resume();
     $('#btnRack').classList.add('hidden');
     $('#gChatBox').classList.remove('hidden');
+    $('#gPanel').classList.remove('hidden'); $('#gDrawer').classList.remove('hidden');
     const me = room.youSeat;
     g.start({ mode: 'online', kind: gameMsg.kind, mySeat: me, state: gameMsg.state, seats: gameMsg.seats.map(s => ({ name: s.name })), cues: gameMsg.seats.map(s => s.cue), aimMode: gameMsg.cfg.aim, net: root.Net, turnMs: gameMsg.turnMs, bigPockets: gameMsg.cfg.pockets === 'big' });
     $('#gSpec').classList.toggle('hidden', me >= 0);
@@ -299,18 +301,20 @@
     hud(vm) {
       $('#gKind').textContent = vm.kindName;
       const st = $('#gStatus'); st.textContent = vm.status; st.classList.toggle('mine', vm.status.indexOf('輪到你') === 0 || vm.status === '請做出選擇');
-      $('#gHint').innerHTML = '<b>' + esc(vm.hint).replace(/^規則：/, '規則：') + '</b>';
-      $('#gHint').innerHTML = esc(vm.hint);
-      let html = '', cap = '';
+      $('#gHint').textContent = vm.hint;
+      let html = '';
       vm.seats.forEach(s => {
         const tag = s.you ? '<span class="tag">你</span>' : '';
         const right = vm.kind === 'score' ? '<span class="pscore">' + s.score + '</span>' : '';
-        html += '<div class="pseat' + (s.isTurn ? ' turn' : '') + '">' + seatHtml(s) + '<div><div class="pname"><span class="n">' + esc(s.name) + '</span>' + tag + right + '</div><div class="pline">' + esc(s.line1) + (s.line2 && vm.kind !== 'score' ? ' ・ ' + esc(s.line2) : '') + '</div></div>' +
-          '<div class="pballs">' + (s.balls || []).map(b => miniBall(b.id, b.out, b.next)).join('') + '</div></div>';
-        cap += '<div class="capsule' + (s.isTurn ? ' turn' : '') + '">' + seatHtml(s, true) + '<div style="min-width:0"><div class="cn">' + esc(s.name) + (s.you ? '（你）' : '') + '</div><div class="cl">' + (vm.kind === 'score' ? s.score + ' 分' : esc(s.line1)) + '</div></div></div>';
+        const subtitle = vm.kind === 'score' ? s.line2 : [s.line1, s.line2].filter(Boolean).join(' ・ ');
+        const potted = s.pottedBalls || [];
+        const historyLabel = potted.length ? '已進袋：' + potted.map(id => id + ' 號球').join('、') : '尚未進袋';
+        const history = potted.length ? potted.map(id => miniBall(id)).join('') : '<span class="potted-empty">尚未進袋</span>';
+        html += '<div class="pseat seat-' + s.seat + (s.isTurn ? ' turn' : '') + '">' + seatHtml(s) + '<div class="pseat-info"><div class="pname"><span class="n">' + esc(s.name) + '</span>' + tag + right + '</div><div class="pline">' + esc(subtitle) + '</div></div>' +
+          '<div class="potted-row"><span class="potted-label">進袋</span><div class="potted-history" role="img" aria-label="' + esc(historyLabel) + '">' + history + '</div></div></div>';
       });
-      $('#gSeats').innerHTML = html; $('#gCapsules').innerHTML = cap;
-      if (vm.practice) $('#gHint').innerHTML = esc(vm.hint) + '<br><b>已進袋：' + (vm.potted || 0) + ' 顆</b>';
+      $('#gSeats').innerHTML = html;
+      if (vm.practice) $('#gHint').textContent = vm.hint + ' ・ 已進袋 ' + (vm.potted || 0) + ' 顆';
     },
     controls(c) {
       const dis = !c.enabled;
@@ -377,20 +381,68 @@
   $('#btnSafety').onclick = () => { if (App.game) App.game.toggleSafety(); };
   $('#btnRack').onclick = () => { if (App.game) App.game.resetPractice(); };
 
-  /* 抽屜（直向） */
-  const isSideLayout = () => matchMedia('(min-aspect-ratio: 1/1) and (min-width: 821px)').matches;
-  const gMain = () => document.querySelector('.g-main');
-  const relayout = () => setTimeout(() => window.dispatchEvent(new Event('resize')), 30);
-  function openDrawer() { if (isSideLayout()) { gMain().classList.remove('collapsed'); relayout(); } else $('#gPanel').classList.add('open'); unread = 0; updateUnread(); }
-  function closeDrawer() { if (isSideLayout()) { gMain().classList.add('collapsed'); relayout(); } else $('#gPanel').classList.remove('open'); }
-  function resetDrawer() { $('#gPanel').classList.remove('open'); gMain().classList.toggle('collapsed', isSideLayout() && matchMedia('(max-height: 520px)').matches); relayout(); }   // 手機橫向：預設收起資訊欄
-  $('#gDrawer').onclick = () => { if (isSideLayout()) return gMain().classList.contains('collapsed') ? openDrawer() : closeDrawer(); return $('#gPanel').classList.contains('open') ? closeDrawer() : openDrawer(); };
+  /* 聊天室：寬螢幕固定在左側，小螢幕改用抽屜 */
+  const isChatDrawerLayout = () => matchMedia('(max-aspect-ratio: 1/1), (max-width: 820px), (max-height: 520px)').matches;
+  let hudLayoutFrame = 0;
+  function syncHudTableLayout() {
+    if (hudLayoutFrame) cancelAnimationFrame(hudLayoutFrame);
+    hudLayoutFrame = requestAnimationFrame(() => {
+      hudLayoutFrame = 0;
+      const game = App.game, screen = $('#screen-game');
+      if (!game || !screen.classList.contains('active') || !game.r.state.s) return;
+      const layout = game.r.state, canvasRect = $('#gCanvas').getBoundingClientRect();
+      const tableWidth = ((layout.portrait ? C.H : C.W) + game.r.FR * 2) * layout.s;
+      const tableCenter = canvasRect.left + layout.ox + tableWidth / 2;
+      const screenRect = screen.getBoundingClientRect(), screenStyle = getComputedStyle(screen);
+      const contentLeft = screenRect.left + parseFloat(screenStyle.paddingLeft || 0);
+      const contentWidth = screenRect.width - parseFloat(screenStyle.paddingLeft || 0) - parseFloat(screenStyle.paddingRight || 0);
+      const contentCenter = contentLeft + contentWidth / 2;
+      screen.style.setProperty('--hud-board-width', tableWidth + 'px');
+      screen.style.setProperty('--hud-board-shift', (tableCenter - contentCenter) + 'px');
+    });
+  }
+  const hudResizeObserver = 'ResizeObserver' in root ? new root.ResizeObserver(syncHudTableLayout) : null;
+  if (hudResizeObserver) hudResizeObserver.observe($('#gCanvas'));
+  function syncChatLayout() {
+    const online = App.game && App.game.cfg && App.game.cfg.mode === 'online';
+    const main = document.querySelector('.g-main'), panel = $('#gPanel'), button = $('#gDrawer');
+    if (!online) {
+      main.classList.remove('with-chat'); panel.classList.remove('open'); panel.setAttribute('aria-hidden', 'true');
+      button.classList.add('hidden'); button.setAttribute('aria-expanded', 'false');
+      syncHudTableLayout();
+      return;
+    }
+    const compact = isChatDrawerLayout();
+    main.classList.toggle('with-chat', !compact);
+    button.classList.toggle('hidden', !compact);
+    if (!compact) {
+      panel.classList.remove('open'); panel.setAttribute('aria-hidden', 'false');
+      button.setAttribute('aria-expanded', 'true');
+      syncHudTableLayout();
+      return;
+    }
+    const open = panel.classList.contains('open');
+    panel.setAttribute('aria-hidden', open ? 'false' : 'true');
+    button.setAttribute('aria-expanded', open ? 'true' : 'false');
+    syncHudTableLayout();
+  }
+  function openDrawer() {
+    $('#gPanel').classList.add('open'); $('#gPanel').setAttribute('aria-hidden', 'false');
+    $('#gDrawer').setAttribute('aria-expanded', 'true'); unread = 0; updateUnread();
+  }
+  function closeDrawer() {
+    $('#gPanel').classList.remove('open'); $('#gPanel').setAttribute('aria-hidden', 'true');
+    $('#gDrawer').setAttribute('aria-expanded', 'false');
+  }
+  function resetDrawer() { closeDrawer(); unread = 0; updateUnread(); syncChatLayout(); }
+  $('#gDrawer').onclick = () => $('#gPanel').classList.contains('open') ? closeDrawer() : openDrawer();
   $('#gPanelClose').onclick = closeDrawer;
+  window.addEventListener('resize', () => { syncChatLayout(); syncHudTableLayout(); });
   function updateUnread() {
     const b = $('#gUnread'); b.textContent = unread; b.classList.toggle('hidden', !unread);
     $('#gDrawerBadge').classList.toggle('hidden', !unread);
   }
-  App.addUnread = function () { if (!$('#gPanel').classList.contains('open') || matchMedia('(min-aspect-ratio: 1/1) and (min-width: 821px)').matches) { /* 橫向時面板一直在 */ } if (!matchMedia('(min-aspect-ratio: 1/1) and (min-width: 821px)').matches && !$('#gPanel').classList.contains('open')) { unread++; updateUnread(); } };
+  App.addUnread = function () { if (isChatDrawerLayout() && !$('#gPanel').classList.contains('open')) { unread++; updateUnread(); } };
 
   /* 返回 */
   $('#gBack').onclick = async () => {

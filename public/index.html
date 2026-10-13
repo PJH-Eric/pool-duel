@@ -109,22 +109,22 @@
       <div id="gStatus" class="g-status" role="status" aria-live="polite">準備中…</div>
       <div class="bar-right"><span class="lat-slot"></span><button class="btn round gear" data-gear aria-label="設定"><span class="ico ico-gear"></span></button></div>
     </header>
+    <div class="g-scoreboard" role="group" aria-label="對局比分與球況">
+      <div id="gSeats" class="seat-list" role="group" aria-label="玩家進袋紀錄"></div>
+      <div class="g-score-center"><div class="timer" id="gTimerWrap"><span class="lbl">倒數</span><span id="gTimer" class="timer-dot">--</span></div></div>
+      <div class="g-score-meta"><span id="gKind" class="chip">九球</span><div id="gHint" class="hint-box"></div><div id="gSpec" class="spec-note hidden"></div></div>
+    </div>
     <div class="g-main">
-      <div id="gCapsules" class="capsules" aria-hidden="false"></div>
-      <aside id="gPanel" class="panel" aria-label="資訊欄">
-        <div class="panel-head"><span id="gKind" class="chip">九球</span><div class="timer" id="gTimerWrap"><span class="lbl">倒數</span><span id="gTimer" class="timer-dot">--</span></div><button id="gPanelClose" class="btn round small drawer-close" aria-label="關閉資訊欄">×</button></div>
-        <div id="gSeats" class="seat-list"></div>
-        <div id="gHint" class="hint-box"></div>
-        <div id="gSpec" class="spec-note hidden"></div>
+      <aside id="gPanel" class="panel chat-panel hidden" aria-label="聊天室資訊欄" aria-hidden="true">
+        <div class="panel-head"><h3 class="sec tight">聊天室 <span id="gUnread" class="badge hidden">0</span></h3><button id="gPanelClose" class="btn round small drawer-close" aria-label="關閉聊天室">×</button></div>
         <div id="gChatBox" class="chat-card hidden">
-          <h3 class="sec tight">聊天室 <span id="gUnread" class="badge hidden">0</span></h3>
           <div id="gChat" class="chat-log" aria-live="polite"></div>
           <div class="quick" data-quick></div>
           <form class="chat-form" data-chatform><input class="field" maxlength="60" placeholder="輸入訊息…" aria-label="聊天訊息"><button class="btn small gold" type="submit">送出</button></form>
         </div>
       </aside>
       <div class="stage"><canvas id="gCanvas" aria-label="球桌（拖曳畫面調整瞄準方向）"></canvas>
-        <button id="gDrawer" class="btn round drawer-btn" aria-label="開啟資訊欄與聊天室">☰<span id="gDrawerBadge" class="dot hidden"></span></button>
+        <button id="gDrawer" class="btn round drawer-btn hidden" aria-label="開啟聊天室" aria-controls="gPanel" aria-expanded="false">☰<span id="gDrawerBadge" class="dot hidden"></span></button>
         <div id="toast" class="toast" role="status" aria-live="polite"></div>
         <div id="dcBanner" class="dc-banner hidden"></div>
         <button id="btnRack" class="btn small rack-btn hidden">重新擺球</button>

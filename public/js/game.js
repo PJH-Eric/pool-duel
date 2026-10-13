@@ -32,7 +32,7 @@
     start(cfg) {
       this.cfg = Object.assign({ mode: 'ai', kind: 'nine', level: 'easy', mySeat: 0, aimMode: 'full', seats: [{ name: '你' }, { name: '電腦' }] }, cfg);
       this.clearTimers(); this.queue = []; this.pendingSettle = null; this.world = null; this.dropping = []; this.curShot = null; this.awaitEcho = false; this.provisional = false;
-      this.stats = [0, 1].map(() => ({ shots: 0, potted: 0, fouls: 0, run: 0, best: 0 }));
+      this.stats = [0, 1].map(() => ({ shots: 0, potted: 0, pottedBalls: [], fouls: 0, run: 0, best: 0 }));
       this.rng = RNG.create(this.cfg.seed || RNG.newSeed());
       this.mySeat = this.cfg.mySeat;
       this.r.setTheme({ felt: this.store.get('felt'), scene: this.store.get('scene'), cue: this.store.get('cue'), bigNumbers: this.store.get('bigNumbers') });
@@ -114,7 +114,7 @@
     refresh() {
       const s = this.state, kind = s.kind, seats = [];
       for (let i = 0; i < 2; i++) {
-        const o = { seat: i, name: this.seatName(i), you: i === this.mySeat, isTurn: s.turn === i && s.phase !== 'over', line1: '', line2: '', balls: [], score: null };
+        const o = { seat: i, name: this.seatName(i), you: i === this.mySeat, isTurn: s.turn === i && s.phase !== 'over', line1: '', line2: '', balls: [], pottedBalls: (this.stats[i] && this.stats[i].pottedBalls || []).slice(), score: null };
         if (kind === 'eight') {
           const g = s.groups[i];
           o.line1 = g ? (g === 'solid' ? '全色球 1~7' : '半色球 9~15') : '尚未分花色';
@@ -473,10 +473,11 @@
     afterResult(before, after, info, seat) {
       const st = this.stats[seat];
       if (st) {
-        st.shots++; st.potted += (info.pocketedObjects || []).length;
+        const pocketed = info.pocketedObjects || [];
+        st.shots++; st.potted += pocketed.length; st.pottedBalls.push.apply(st.pottedBalls, pocketed);
         const foul = info.fouls && info.fouls.length > 0;
         if (foul) st.fouls++;
-        if (info.continued) { st.run += (info.pocketedObjects || []).length; } else { st.run = (info.pocketedObjects || []).length; }
+        if (info.continued) { st.run += pocketed.length; } else { st.run = pocketed.length; }
         st.best = Math.max(st.best, st.run);
       }
       this.state = after;
@@ -585,7 +586,7 @@
     }
     nextGame() {
       this._recorded = false;
-      this.stats = [0, 1].map(() => ({ shots: 0, potted: 0, fouls: 0, run: 0, best: 0 }));
+      this.stats = [0, 1].map(() => ({ shots: 0, potted: 0, pottedBalls: [], fouls: 0, run: 0, best: 0 }));
       this.state = Rules.nextGame(this.state, this.rng);
       if (this.cfg.mode === 'ai') { /* 開球權互換：玩家第二局由電腦開球 */ }
       this.r.resetRolls(); this.ui.result && this.ui.result(null);
