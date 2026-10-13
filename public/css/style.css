@@ -402,3 +402,12 @@ button { font-family: inherit; }
 @media (max-height: 520px) { .spin-ball { width: 88px; height: 88px; } .spin-tip { display: none; } .spin-pop { width: 168px; padding: 8px; gap: 6px; } }
 @media (max-width: 520px) { .btn.big { font-size: 18px; padding: 13px 26px; } .cards { grid-template-columns: 1fr; } .seat-cards { grid-template-columns: 1fr 1fr; } .res-title { font-size: 26px; } }
 .high-contrast .mini-ball { outline: 1px solid rgba(255,255,255,.7); }
+
+/* 左上角「返回遊戲大廳」膠囊（只在首頁），與右上角設定鈕對稱 */
+.lobby-pill { position: absolute; top: calc(14px + env(safe-area-inset-top)); left: calc(16px + env(safe-area-inset-left)); z-index: 3; display: inline-flex; align-items: center; gap: 4px; min-height: 46px; padding: 0 16px 0 8px; border-radius: 999px; text-decoration: none; font-weight: 800; font-size: 15px; letter-spacing: .04em; color: #3a2208; background: linear-gradient(#ffe08a, #f0b94c 50%, #c98c25); box-shadow: 0 3px 0 #7b5112, 0 6px 12px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.7); transition: transform .12s, filter .12s; }
+.lobby-pill[hidden] { display: none; }
+.lobby-pill:hover { filter: brightness(1.08); }
+.lobby-pill:active { transform: translateY(2px); }
+.lobby-pill:focus-visible { outline: 3px solid #fff3c4; outline-offset: 2px; }
+@media (max-width: 380px) { .lobby-pill { padding: 0 12px 0 4px; font-size: 14px; } }
+@media (max-height: 420px) { .lobby-pill { min-height: 40px; } }
