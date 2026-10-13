@@ -155,6 +155,7 @@ button { font-family: inherit; }
   #screen-game > .g-top { position: absolute; inset: 4px 10px auto; height: 0; padding: 0; pointer-events: none; }
   #screen-game > .g-top > .btn { position: absolute; top: 0; left: 0; pointer-events: auto; }
   #screen-game > .g-top .bar-right { position: absolute; top: 0; right: 0; margin-left: 0; pointer-events: auto; }
+  #screen-game > .g-scoreboard { margin-top: 10px; }
 }
 .g-status { display: flex; align-items: center; justify-content: center; flex: none; width: 100%; min-width: 0; min-height: 40px; margin: 0; padding: 6px 18px; border-radius: 21px; background: rgba(15,8,5,.82); border: 1px solid #55391f; font-weight: 900; letter-spacing: .1em; font-size: 17px; text-align: center; box-shadow: inset 0 1px 0 rgba(255,225,180,.12); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .g-status.mine { color: var(--brass-l); border-color: var(--brass); }
