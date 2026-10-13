@@ -11,7 +11,7 @@ function shot(x, y, vx, vy, scale) {
   for (const event of world.events.filter(e => e.type === 'pocket')) {
     const pocket = P.POCKETS[event.pocket];
     const distance = Math.hypot(event.x - pocket.hx, event.y - pocket.hy);
-    const allowedOverlap = pocket.corner ? 0 : C.R * C.SIDE_CAPTURE_EASE_RATIO;
+    const allowedOverlap = pocket.corner ? C.CORNER_CAPTURE_EASE : C.R * C.SIDE_CAPTURE_EASE_RATIO;
     assert.ok(distance + C.R <= pocket.hr * scale + allowedOverlap + 0.01,
       `提前進袋：袋 ${event.pocket}，球心距離 ${distance.toFixed(2)} + 球半徑 ${C.R} 超過容許袋緣 ${allowedOverlap.toFixed(2)}`);
   }
@@ -24,18 +24,37 @@ function shot(x, y, vx, vy, scale) {
   return world;
 }
 
-// 中袋只放寬球半徑的極小比例；角袋的球心捕捉門檻維持完整進洞。
+// 中袋與角袋只放寬極小比例，不能明顯跨過可見袋緣。
 for (const scale of [1, C.POCKET_SCALE_BIG]) {
   for (const pocket of P.POCKETS) {
     const fullBallRadius = pocket.hr * scale - C.R;
     const captureRadius = P.capRadius(pocket, scale);
     if (pocket.corner) {
-      assert.equal(captureRadius, fullBallRadius, '角袋仍要求球體完整進入洞口');
+      assert.equal(captureRadius, fullBallRadius + C.CORNER_CAPTURE_EASE, '角袋只容許半個物理單位的判定補償');
     } else {
       const easedRadius = C.R * 0.02;
       assert.ok(captureRadius > fullBallRadius && captureRadius <= fullBallRadius + easedRadius + 0.001,
         '中袋只容許很小的球體比例跨過袋緣');
     }
+  }
+}
+
+// 角袋補償只跨過原門檻一點點，超過補償上限仍不可進袋。
+for (const pocket of P.POCKETS.filter(p => p.corner)) {
+  const inwardX = pocket.x ? -Math.SQRT1_2 : Math.SQRT1_2;
+  const inwardY = pocket.y ? -Math.SQRT1_2 : Math.SQRT1_2;
+  for (const [offset, expectedPocket] of [[-0.25, pocket], [0.25, null]]) {
+    const distance = P.capRadius(pocket, 1) + offset;
+    const world = P.makeWorld([{
+      id: 1,
+      x: pocket.hx + inwardX * distance,
+      y: pocket.hy + inwardY * distance
+    }]);
+    P.stepWorld(world);
+    const expectedIndex = expectedPocket ? P.POCKETS.indexOf(expectedPocket) : -1;
+    const message = expectedPocket ? '角袋微量補償範圍內應進袋' : '超過角袋微量補償範圍仍不可進袋';
+    assert.equal(world.balls[0].pocket, expectedIndex, message);
+    checked++;
   }
 }
 
@@ -64,6 +83,17 @@ for (const scale of [1, C.POCKET_SCALE_BIG]) {
 // 原始重現：左上角斜擦導槽，在可見袋口外被邊界保護程式當成進袋。
 const angle = 145 * Math.PI / 180;
 shot(16, 16, Math.cos(angle) * 900, Math.sin(angle) * 900, 1);
+
+// 單球慢速斜向進底袋後，球心停在黑洞視覺範圍內，卻未被判進袋。
+const bottomPocketAngle = 50 * Math.PI / 180;
+for (const right of [false, true]) {
+  const pocketIndex = right ? 5 : 3;
+  const world = P.makeWorld([{ id: 2, x: right ? C.W - 20 : 20, y: C.H - 34 }]);
+  world.balls[0].vx = (right ? 1 : -1) * Math.cos(bottomPocketAngle) * 180;
+  world.balls[0].vy = Math.sin(bottomPocketAngle) * 180;
+  P.runToRest(world);
+  assert.equal(world.balls[0].pocket, pocketIndex, '單球慢速斜向進底袋應確實進袋');
+}
 
 // 高速斜擦小範圍時，單一步的兩端都可能在洞外；仍須偵測實際通過洞內的路徑。
 for (const index of [1, 4]) {

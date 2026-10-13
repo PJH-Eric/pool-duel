@@ -24,6 +24,7 @@
     // 進袋門檻依球半徑計算；中袋只容許極小比例跨過可見袋緣。
     HOLE_R_CORNER: 26, HOLE_R_SIDE: 20,    // 黑洞半徑
     HOLE_OFF_CORNER: 20, HOLE_OFF_SIDE: 22,  // 袋心移到檯面外，由導槽連接庫邊入口
+    CORNER_CAPTURE_EASE: 0.5, // 角袋只補償極小的物理取樣誤差，不改變可見袋口
     SIDE_CAPTURE_EASE_RATIO: 0.02, // 中袋只放寬球半徑的 2%，不改變可見洞口
     POCKET_SCALE_BIG: 1.25,     // 「加大袋口」倍率
     MAX_SIM_TIME: 30,           // 單桿模擬時間上限（秒）

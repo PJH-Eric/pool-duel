@@ -27,7 +27,7 @@
   ];
 
   function capRadius(p, scale) {
-    var easing = p.corner ? 0 : R * C.SIDE_CAPTURE_EASE_RATIO;
+    var easing = p.corner ? C.CORNER_CAPTURE_EASE : R * C.SIDE_CAPTURE_EASE_RATIO;
     return Math.max(0, p.hr * (scale || 1) - R + easing);
   }
 
