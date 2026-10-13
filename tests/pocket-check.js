@@ -96,6 +96,27 @@ for (const right of [false, true]) for (const bottom of [false, true]) {
   checked++;
 }
 
+// 球已滑進中袋、速度很低時，應由袋內斜面帶入，不應停在可見洞口上。
+for (const scale of [1, C.POCKET_SCALE_BIG]) for (const bottom of [false, true]) {
+  const index = bottom ? 4 : 1, pocket = P.POCKETS[index];
+  const supportRadius = P.capRadius(pocket, scale) + C.R * 0.08;
+  const targetY = bottom ? pocket.hy - supportRadius + 0.5 : pocket.hy + supportRadius - 0.5;
+  const startY = bottom ? targetY - 25 : targetY + 25;
+  const world = shot(C.W / 2, startY, 0, bottom ? 100 : -100, scale);
+  assert.equal(world.balls[0].pocket, index, '低速球已失去中袋支撐時應滑落');
+  checked++;
+}
+
+// 袋內滑落不會擴大實際判定半徑；球還在入口外側時仍留在檯面。
+for (const scale of [1, C.POCKET_SCALE_BIG]) {
+  const pocket = P.POCKETS[1];
+  const supportRadius = P.capRadius(pocket, scale) + C.R * 0.08;
+  const world = P.makeWorld([{ id: 1, x: pocket.hx, y: pocket.hy + supportRadius + 0.5 }], { pocketScale: scale });
+  P.stepWorld(world);
+  assert.equal(world.balls[0].pocket, -1, '中袋入口外的球不能因滑落補償進袋');
+  checked++;
+}
+
 // 已深入袋內而失去支撐的球會滑落；仍在袋緣上的球必須留在原處。
 for (const pocket of P.POCKETS.filter(p => p.corner)) {
   const ux = pocket.x ? -Math.SQRT1_2 : Math.SQRT1_2;

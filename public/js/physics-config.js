@@ -25,7 +25,7 @@
     HOLE_R_CORNER: 26, HOLE_R_SIDE: 20,    // 黑洞半徑
     HOLE_OFF_CORNER: 20, HOLE_OFF_SIDE: 22,  // 袋心移到檯面外，由導槽連接庫邊入口
     CORNER_CAPTURE_EASE: 0.5, // 角袋只補償極小的物理取樣誤差，不改變可見袋口
-    CORNER_FALL_SPEED: 20,      // 球已深入角袋且慢下來時，沿袋內斜面滑向袋心
+    POCKET_FALL_SPEED: 20,      // 球已深入袋內且慢下來時，沿袋內斜面滑向袋心
     SIDE_CAPTURE_EASE_RATIO: 0.02, // 中袋只放寬球半徑的 2%，不改變可見洞口
     POCKET_SCALE_BIG: 1.25,     // 「加大袋口」倍率
     MAX_SIM_TIME: 30,           // 單桿模擬時間上限（秒）

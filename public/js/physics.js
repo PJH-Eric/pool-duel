@@ -31,19 +31,22 @@
     return Math.max(0, p.hr * (scale || 1) - R + easing);
   }
 
-  function rollIntoCorner(w, b) {
-    if (b.vx * b.vx + b.vy * b.vy >= C.CORNER_FALL_SPEED * C.CORNER_FALL_SPEED) return;
+  function rollIntoPocket(w, b) {
+    var speed2 = b.vx * b.vx + b.vy * b.vy;
     for (var pi = 0; pi < POCKETS.length; pi++) {
       var p = POCKETS[pi];
-      if (!p.corner) continue;
+      var fallSpeed = p.corner ? C.POCKET_FALL_SPEED : C.ZERO_V;
+      if (speed2 >= fallSpeed * fallSpeed) continue;
       var dx = b.x - p.hx, dy = b.y - p.hy;
       var distance2 = dx * dx + dy * dy;
       // 球心深入袋內、球體大半失去檯面支撐後才滑落；袋緣與入口不吸球。
-      var supportRadius = p.hr * w.pocketScale - R / 2;
+      var supportRadius = p.corner
+        ? p.hr * w.pocketScale - R / 2
+        : capRadius(p, w.pocketScale) + R * 0.08;
       if (distance2 >= supportRadius * supportRadius || distance2 < 1e-9) continue;
       var distance = Math.sqrt(distance2);
-      b.vx = -dx / distance * C.CORNER_FALL_SPEED;
-      b.vy = -dy / distance * C.CORNER_FALL_SPEED;
+      b.vx = -dx / distance * C.POCKET_FALL_SPEED;
+      b.vy = -dy / distance * C.POCKET_FALL_SPEED;
       return;
     }
   }
@@ -300,7 +303,7 @@
         wallCollide(w, b);
         jawCollide(w, b);
         pocketGuideCollide(w, b);
-        if (!capturePocket(w, b, b.x, b.y)) rollIntoCorner(w, b);
+        if (!capturePocket(w, b, b.x, b.y)) rollIntoPocket(w, b);
       }
       w.t += h;
     }
