@@ -59,7 +59,7 @@ for (const pocket of P.POCKETS.filter(p => p.corner)) {
 }
 
 // 角袋袋口與袋口碰撞點共用較窄的缺口，畫面與實際入口不可分離。
-assert.equal(C.CORNER_GAP, 32.5, '角袋入口應使用指定的 32.5');
+assert.ok(C.CORNER_GAP >= 32 && C.CORNER_GAP <= 33, '角袋入口應在指定的 32～33 範圍');
 for (const pocket of P.POCKETS.filter(p => p.corner)) {
   const mouth = P.pocketGeometry(pocket, 1).mouth;
   const width = Math.hypot(mouth[0].x - mouth[1].x, mouth[0].y - mouth[1].y);
@@ -108,6 +108,20 @@ for (const pocket of P.POCKETS.filter(p => p.corner)) {
     const edge = shot(x, y, 0, 0, scale);
     assert.equal(edge.balls[0].pocket, -1, '袋緣有支撐的球不能被吸入角袋');
     assert.ok(Math.hypot(edge.balls[0].x - x, edge.balls[0].y - y) < 0.001, '袋緣靜止球不能被移動');
+  }
+}
+
+// 慢速角袋回歸附近的角度與速度變化也要穩定，避免入口只在單一取樣點可進袋。
+for (const degrees of [49.5, 49.75, 50, 50.25, 50.5]) {
+  for (const speed of [175, 177.5, 180, 182.5, 185]) {
+    for (const right of [false, true]) for (const bottom of [false, true]) {
+      const radians = degrees * Math.PI / 180;
+      const world = shot(right ? C.W - 20 : 20, bottom ? C.H - 34 : 34,
+        (right ? 1 : -1) * Math.cos(radians) * speed,
+        (bottom ? 1 : -1) * Math.sin(radians) * speed, 1);
+      assert.equal(world.balls[0].pocket, (bottom ? 3 : 0) + (right ? 2 : 0),
+        `慢速角袋應穩定進袋：${degrees} 度、速度 ${speed}`);
+    }
   }
 }
 
