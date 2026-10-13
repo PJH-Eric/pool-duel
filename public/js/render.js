@@ -9,8 +9,8 @@
   'use strict';
   if (!C && typeof require === 'function') { C = require('./physics-config.js'); P = require('./physics.js'); Themes = require('./themes/tables.js'); }
   const W = C.W, H = C.H, R = C.R;
-  const FR = 66;                  // 木框寬（桌面單位）
-  const CUSH = 30;                // 庫邊橡膠厚度
+  const FR = 64;                  // 加寬木框，容納檯外延伸的球袋與導槽
+  const CUSH = 24;                // 庫邊橡膠厚度
   const TWO_PI = Math.PI * 2;
 
   function hex(c) { const n = parseInt(c.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
@@ -157,101 +157,104 @@
       const felt = Themes.FELTS[state.theme.felt] || Themes.FELTS.classic;
       const cv = document.createElement('canvas'); cv.width = canvas.width; cv.height = canvas.height;
       const c = cv.getContext('2d'); applyTableTransform(c);
-      const rnd = mulberry(11);
-      // 木框
       const ow = W + 2 * FR, oh = H + 2 * FR;
-      const wood = c.createLinearGradient(-FR, -FR, -FR, H + FR); wood.addColorStop(0, '#a8693f'); wood.addColorStop(0.5, '#7d4527'); wood.addColorStop(1, '#4d2714');
-      c.shadowColor = 'rgba(0,0,0,0.65)'; c.shadowBlur = 26 * state.s * state.dpr * 0.25; c.shadowOffsetY = 8;
-      rr(c, -FR, -FR, ow, oh, 40); c.fillStyle = wood; c.fill();
-      c.shadowColor = 'transparent';
-      // 木紋
-      c.save(); rr(c, -FR, -FR, ow, oh, 40); c.clip();
-      for (let i = 0; i < 90; i++) {
-        const y = -FR + rnd() * oh, a = 0.05 + rnd() * 0.12;
-        c.strokeStyle = rnd() < 0.5 ? 'rgba(0,0,0,' + a + ')' : 'rgba(255,210,150,' + a * 0.6 + ')'; c.lineWidth = 0.6 + rnd() * 1.6;
-        c.beginPath(); c.moveTo(-FR, y); c.bezierCurveTo(250, y + rnd() * 14 - 7, 700, y + rnd() * 14 - 7, W + FR, y + rnd() * 10 - 5); c.stroke();
+      const wood = c.createLinearGradient(0, -FR, 0, H + FR);
+      wood.addColorStop(0, '#ac4339'); wood.addColorStop(0.12, '#63251f');
+      wood.addColorStop(0.55, '#421715'); wood.addColorStop(0.92, '#6e2923'); wood.addColorStop(1, '#32120f');
+      c.shadowColor = 'rgba(0,0,0,0.65)'; c.shadowBlur = 18; c.shadowOffsetY = 8;
+      rr(c, -FR, -FR, ow, oh, 30); c.fillStyle = wood; c.fill();
+      c.shadowColor = 'transparent'; c.shadowOffsetY = 0;
+      c.save(); rr(c, -FR, -FR, ow, oh, 30); c.clip();
+      const rnd = mulberry(17);
+      for (let i = 0; i < 110; i++) {
+        const y = -FR + rnd() * oh;
+        c.strokeStyle = i % 3 ? 'rgba(255,176,132,0.055)' : 'rgba(12,0,0,0.15)';
+        c.lineWidth = 0.6 + rnd(); c.beginPath(); c.moveTo(-FR, y);
+        c.bezierCurveTo(240, y + 4, 780, y - 4, W + FR, y); c.stroke();
       }
-      // 上緣高光
-      const hl = c.createLinearGradient(0, -FR, 0, -FR + 26); hl.addColorStop(0, 'rgba(255,230,190,0.28)'); hl.addColorStop(1, 'rgba(255,230,190,0)');
-      c.fillStyle = hl; c.fillRect(-FR, -FR, ow, 26);
       c.restore();
-      // 內緣黃銅細線
-      c.strokeStyle = 'rgba(214,170,80,0.55)'; c.lineWidth = 2.2; rr(c, -CUSH - 12, -CUSH - 12, W + 2 * CUSH + 24, H + 2 * CUSH + 24, 18); c.stroke();
-      c.strokeStyle = 'rgba(0,0,0,0.5)'; c.lineWidth = 3; rr(c, -CUSH - 5, -CUSH - 5, W + 2 * CUSH + 10, H + 2 * CUSH + 10, 12); c.stroke();
-      // 桌布底色
-      const cx = W * 0.5, cy = H * 0.42;
-      const fg = c.createRadialGradient(cx, cy, 30, cx, H / 2, W * 0.62);
-      fg.addColorStop(0, felt.c1); fg.addColorStop(0.55, felt.c2); fg.addColorStop(1, felt.c3);
-      c.fillStyle = fg; c.fillRect(-CUSH, -CUSH, W + 2 * CUSH, H + 2 * CUSH);
-      // 桌布紋理
-      c.save(); c.beginPath(); c.rect(-CUSH, -CUSH, W + 2 * CUSH, H + 2 * CUSH); c.clip();
-      const pat = c.createPattern(noiseTile(), 'repeat'); c.globalAlpha = 0.9; c.fillStyle = pat; c.fillRect(-CUSH, -CUSH, W + 2 * CUSH, H + 2 * CUSH);
-      c.restore();
-      // 庫邊橡膠：以圓形袋口切出平滑弧線。
-      const strips = [
-        [[0, 0], [W, 0], [W, -CUSH], [0, -CUSH]], [[0, H], [W, H], [W, H + CUSH], [0, H + CUSH]],
-        [[0, 0], [0, H], [-CUSH, H], [-CUSH, 0]], [[W, 0], [W, H], [W + CUSH, H], [W + CUSH, 0]]
-      ];
-      const shadeDir = [[0, -CUSH, 0, 0], [0, H + CUSH, 0, H], [-CUSH, 0, 0, 0], [W + CUSH, 0, W, 0]];
-      function poly(pts) { c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) c.lineTo(pts[i][0], pts[i][1]); c.closePath(); }
-      strips.forEach((pts, i) => {
-        poly(pts); c.fillStyle = felt.cushion; c.fill();
-        const d = shadeDir[i], g2 = c.createLinearGradient(d[0], d[1], d[2], d[3]);
-        g2.addColorStop(0, 'rgba(255,255,255,0.10)'); g2.addColorStop(0.55, 'rgba(0,0,0,0.04)'); g2.addColorStop(1, 'rgba(0,0,0,0.30)');
-        poly(pts); c.fillStyle = g2; c.fill();
-      });
-      // 庫邊鼻線（貼桌面的那條邊）
-      c.strokeStyle = felt.cushionDark; c.lineWidth = 2.5; c.beginPath(); c.rect(0, 0, W, H); c.stroke();
-      c.strokeStyle = 'rgba(255,255,255,0.14)'; c.lineWidth = 1.5; c.beginPath(); c.rect(-0.8, -0.8, W + 1.6, H + 1.6); c.stroke();
-      // 桌面邊緣陰影
-      c.save(); c.beginPath(); c.rect(0, 0, W, H); c.clip();
-      [[0, 0, 0, 18], [0, H, 0, H - 18], [0, 0, 18, 0], [W, 0, W - 18, 0]].forEach(e => {
-        const sh = c.createLinearGradient(e[0], e[1], e[2], e[3]); sh.addColorStop(0, 'rgba(0,0,0,0.34)'); sh.addColorStop(1, 'rgba(0,0,0,0)');
-        c.fillStyle = sh; c.fillRect(0, 0, W, H);
-      });
-      c.restore();
-      // 圓袋嵌入桌布，洞心及半徑與進袋判定共用。
-      c.save();
-      P.POCKETS.forEach(p => {
-        const rd = p.hr * (state.pocketScale || 1);
-        // 木框上的細皮革邊（只在木頭上看得到）
-        c.save(); c.beginPath(); c.rect(-FR, -FR, ow, oh); c.rect(-CUSH, -CUSH, W + 2 * CUSH, H + 2 * CUSH); c.clip('evenodd');
-        c.fillStyle = '#2a1a0e'; c.beginPath(); c.arc(p.hx, p.hy, rd + 3.5, 0, TWO_PI); c.fill();
-        c.restore();
-        const hole = c.createRadialGradient(p.hx, p.hy, rd * 0.2, p.hx, p.hy, rd * 1.6);
-        hole.addColorStop(0, '#000'); hole.addColorStop(0.6, '#050302'); hole.addColorStop(1, '#0d0806');
-        c.beginPath(); c.arc(p.hx, p.hy, rd, 0, TWO_PI);
-        c.fillStyle = hole; c.fill();
-        c.strokeStyle = '#101711'; c.lineWidth = 2; c.stroke();
-      });
-      c.restore();
-      // 洞內一點點反光，讓洞有深度
-      P.POCKETS.forEach(p => {
-        const rd = p.hr * (state.pocketScale || 1);
-        c.strokeStyle = 'rgba(255,255,255,0.06)'; c.lineWidth = 2; c.beginPath(); c.arc(p.hx, p.hy, rd - 4, 0.15 * Math.PI, 0.85 * Math.PI); c.stroke();
-      });
-      // 木框雕花：沿著框邊一排小金點與雙金線（避開袋口與瞄準點）
-      (function () {
-        const gold = 'rgba(232,190,100,0.55)', pockets = P.POCKETS;
-        function nearPocket(x, y) { for (let i = 0; i < pockets.length; i++) { const k = pockets[i]; if (Math.hypot(x - k.hx, y - k.hy) < 62) return true; } return false; }
-        function dotAt(x, y, k) { if (nearPocket(x, y)) return; if (k % 5 === 0) { c.fillStyle = gold; c.beginPath(); c.arc(x, y, 2.4, 0, TWO_PI); c.fill(); } else { c.fillStyle = 'rgba(232,190,100,0.32)'; c.beginPath(); c.arc(x, y, 1.4, 0, TWO_PI); c.fill(); } }
-        c.save(); c.beginPath(); c.rect(-FR, -FR, ow, oh); pockets.forEach(k => { c.moveTo(k.hx + 46, k.hy); c.arc(k.hx, k.hy, 46, 0, TWO_PI); }); c.clip('evenodd');
-        c.strokeStyle = 'rgba(232,190,100,0.28)'; c.lineWidth = 1;
-        [-CUSH - 25, -CUSH - 9].forEach(o => { rr(c, o, o, W - 2 * o, H - 2 * o, 14); c.stroke(); });
-        c.restore();
-      })();
-      // 瞄準標示（鑽石）
-      c.fillStyle = '#efe3c4';
+      c.strokeStyle = '#c68d59'; c.lineWidth = 1.4; rr(c, -FR + 4, -FR + 4, ow - 8, oh - 8, 27); c.stroke();
+      c.strokeStyle = 'rgba(255,209,163,0.22)'; c.lineWidth = 1; rr(c, -FR + 8, -FR + 8, ow - 16, oh - 16, 24); c.stroke();
+      c.fillStyle = '#12241e'; rr(c, -CUSH - 5, -CUSH - 5, W + CUSH * 2 + 10, H + CUSH * 2 + 10, 12); c.fill();
+      const cloth = c.createRadialGradient(W * 0.48, H * 0.40, 20, W / 2, H / 2, W * 0.62);
+      cloth.addColorStop(0, felt.c1); cloth.addColorStop(0.65, felt.c2); cloth.addColorStop(1, felt.c3);
+      c.fillStyle = cloth; c.fillRect(-CUSH, -CUSH, W + CUSH * 2, H + CUSH * 2);
+      c.save(); c.beginPath(); c.rect(-CUSH, -CUSH, W + CUSH * 2, H + CUSH * 2); c.clip();
+      c.globalAlpha = 0.28; c.fillStyle = c.createPattern(noiseTile(), 'repeat');
+      c.fillRect(-CUSH, -CUSH, W + CUSH * 2, H + CUSH * 2); c.restore();
+      // Six cushions terminate at the same mouth and jaw coordinates used by physics.
+      const cg = C.CORNER_GAP, sg = C.SIDE_GAP;
+      const segments = [[cg, W / 2 - sg], [W / 2 + sg, W - cg]];
+      function cushion(points, gradient, nose) {
+        c.beginPath(); c.moveTo(...points[0]);
+        for (let i = 1; i < points.length; i++) c.lineTo(...points[i]);
+        c.closePath(); c.fillStyle = gradient; c.fill();
+        c.strokeStyle = 'rgba(0,0,0,0.28)'; c.lineWidth = 1.2; c.stroke();
+        c.beginPath(); c.moveTo(...nose[0]); c.lineTo(...nose[1]);
+        c.strokeStyle = 'rgba(142,221,186,0.38)'; c.lineWidth = 1.5; c.stroke();
+      }
+      for (const [left, right] of segments) for (const bottom of [false, true]) {
+        const y = bottom ? H : 0, out = bottom ? CUSH : -CUSH;
+        const g = c.createLinearGradient(0, y + out, 0, y);
+        g.addColorStop(0, felt.cushion); g.addColorStop(0.50, felt.cushion); g.addColorStop(1, felt.cushionDark);
+        cushion([[left, y], [right, y], [right - 14, y + out], [left + 14, y + out]], g, [[left, y], [right, y]]);
+      }
+      for (const right of [false, true]) {
+        const x = right ? W : 0, out = right ? CUSH : -CUSH;
+        const g = c.createLinearGradient(x + out, 0, x, 0);
+        g.addColorStop(0, felt.cushion); g.addColorStop(0.5, felt.cushion); g.addColorStop(1, felt.cushionDark);
+        cushion([[x, cg], [x, H - cg], [x + out, H - cg - 14], [x + out, cg + 14]], g, [[x, cg], [x, H - cg]]);
+      }
+      // Rounded rubber jaw tips use the collision engine's actual centers and radius.
+      c.fillStyle = felt.cushionDark;
+      for (const [x, y] of P.JAWS) { c.beginPath(); c.arc(x, y, C.JAW_R, 0, TWO_PI); c.fill(); }
+      // Pocket throats open at the rail edge and carry the well beyond the frame.
+      for (const p of P.POCKETS) {
+        const r = p.hr * (state.pocketScale || 1);
+        const throat = '#07100b';
+        if (p.corner) {
+          const sx = p.x ? -1 : 1, sy = p.y ? -1 : 1;
+          c.save(); c.translate(p.x, p.y); c.scale(sx, sy);
+          const hx = (p.hx - p.x) * sx, hy = (p.hy - p.y) * sy;
+          // A flat trapezoid joins both cushion tips to the external round well.
+          c.beginPath();
+          c.moveTo(C.CORNER_GAP, 0);
+          c.lineTo(hx + r + 2, hy);
+          c.lineTo(hx, hy + r + 2);
+          c.lineTo(0, C.CORNER_GAP);
+          c.closePath(); c.fillStyle = felt.cushion; c.fill();
+          c.restore();
+        } else {
+          const edgeY = p.y, direction = p.y ? 1 : -1;
+          const edgeX = p.x;
+          c.beginPath();
+          c.moveTo(edgeX - C.SIDE_GAP, edgeY); c.lineTo(edgeX + C.SIDE_GAP, edgeY);
+          c.bezierCurveTo(edgeX + C.SIDE_GAP - 3, edgeY + direction * 12, edgeX + 12, p.hy - direction * 8, edgeX + 9, p.hy);
+          c.lineTo(edgeX - 9, p.hy);
+          c.bezierCurveTo(edgeX - 12, p.hy - direction * 8, edgeX - C.SIDE_GAP + 3, edgeY + direction * 12, edgeX - C.SIDE_GAP, edgeY);
+          c.closePath(); c.fillStyle = throat; c.fill();
+        }
+      }
+      // Flat circular wells keep the opening crisp without a cast shadow.
+      for (const p of P.POCKETS) {
+        const r = p.hr * (state.pocketScale || 1);
+        c.beginPath(); c.arc(p.hx, p.hy, r + 2, 0, TWO_PI);
+        c.fillStyle = '#263b33'; c.fill();
+        c.beginPath(); c.arc(p.hx, p.hy, r + 1, 0, TWO_PI);
+        c.fillStyle = '#121a16'; c.fill();
+        c.beginPath(); c.arc(p.hx, p.hy, r, 0, TWO_PI);
+        c.fillStyle = '#010403'; c.fill();
+      }
+      c.fillStyle = '#e9dec3';
       for (let k = 1; k < 8; k++) {
         if (k === 4) continue;
-        diamond(c, W / 8 * k, -CUSH - 17); diamond(c, W / 8 * k, H + CUSH + 17);
+        diamond(c, W * k / 8, -39); diamond(c, W * k / 8, H + 39);
       }
-      for (let k = 1; k < 4; k++) { diamond(c, -CUSH - 17, H / 4 * k); diamond(c, W + CUSH + 17, H / 4 * k); }
-      // 開球線與置球點
-      c.strokeStyle = 'rgba(255,255,255,0.16)'; c.lineWidth = 1.6; c.setLineDash([6, 8]);
-      c.beginPath(); c.moveTo(C.HEAD_X, 0); c.lineTo(C.HEAD_X, H); c.stroke(); c.setLineDash([]);
-      c.fillStyle = 'rgba(255,255,255,0.28)';
-      [[C.HEAD_X, H / 2], [W / 2, H / 2], [C.FOOT_X, H / 2]].forEach(s => { c.beginPath(); c.arc(s[0], s[1], 2.6, 0, TWO_PI); c.fill(); });
+      for (let k = 1; k < 4; k++) { diamond(c, -39, H * k / 4); diamond(c, W + 39, H * k / 4); }
+      c.strokeStyle = 'rgba(216,241,224,0.10)'; c.lineWidth = 1;
+      c.beginPath(); c.moveTo(C.HEAD_X, 0); c.lineTo(C.HEAD_X, H); c.stroke();
+      c.fillStyle = 'rgba(235,248,232,0.30)';
+      for (const x of [C.HEAD_X, W / 2, C.FOOT_X]) { c.beginPath(); c.arc(x, H / 2, 2, 0, TWO_PI); c.fill(); }
       state.table = cv;
     }
     function diamond(c, x, y) { c.beginPath(); c.moveTo(x, y - 6.5); c.lineTo(x + 4.2, y); c.lineTo(x, y + 6.5); c.lineTo(x - 4.2, y); c.closePath(); c.fill(); }

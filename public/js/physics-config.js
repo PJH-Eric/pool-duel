@@ -20,10 +20,10 @@
     E_JAW: 0.6,                 // 袋口尖角彈性
     JAW_R: 5,                   // 袋口尖角圓半徑
     CORNER_GAP: 34,             // 角袋：庫邊從角落起算的缺口
-    SIDE_GAP: 33,               // 邊袋：中點兩側缺口半寬
+    SIDE_GAP: 27,               // 邊袋：中點兩側缺口半寬
     // 袋口（畫面上看到的黑洞）與進袋判定使用同一組數字：球心進到黑洞範圍（再加一點點）就掉進去
-    HOLE_R_CORNER: 26, HOLE_R_SIDE: 28,    // 黑洞半徑
-    HOLE_OFF_CORNER: 4, HOLE_OFF_SIDE: 12,  // 圓袋嵌入桌布；角袋斜向偏移，中袋垂直偏移
+    HOLE_R_CORNER: 26, HOLE_R_SIDE: 20,    // 黑洞半徑
+    HOLE_OFF_CORNER: 20, HOLE_OFF_SIDE: 22,  // 袋心移到檯面外，由導槽連接庫邊入口
     CAP_MARGIN: 0,                         // 球心必須進入可見洞緣才落袋
     CAP_FAST_PEN: 6, CAP_FAST_V: 1500,     // 快速球更難進：球速到 1500 時，球心要進到洞緣內 5 單位才掉（快球容易擦過、被袋口彈開）
     POCKET_SCALE_BIG: 1.25,     // 「加大袋口」倍率
