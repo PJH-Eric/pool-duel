@@ -27,7 +27,8 @@
   ];
 
   function capRadius(p, scale) {
-    return Math.max(0, p.hr * (scale || 1) - R);
+    var easing = p.corner ? 0 : R * C.SIDE_CAPTURE_EASE_RATIO;
+    return Math.max(0, p.hr * (scale || 1) - R + easing);
   }
 
   var pocketGeometryCache = {};

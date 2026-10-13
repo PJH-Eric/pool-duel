@@ -11,8 +11,9 @@ function shot(x, y, vx, vy, scale) {
   for (const event of world.events.filter(e => e.type === 'pocket')) {
     const pocket = P.POCKETS[event.pocket];
     const distance = Math.hypot(event.x - pocket.hx, event.y - pocket.hy);
-    assert.ok(distance + C.R <= pocket.hr * scale + 0.01,
-      `提前進袋：袋 ${event.pocket}，球心距離 ${distance.toFixed(2)} + 球半徑 ${C.R} > 袋半徑 ${pocket.hr * scale}`);
+    const allowedOverlap = pocket.corner ? 0 : C.R * C.SIDE_CAPTURE_EASE_RATIO;
+    assert.ok(distance + C.R <= pocket.hr * scale + allowedOverlap + 0.01,
+      `提前進袋：袋 ${event.pocket}，球心距離 ${distance.toFixed(2)} + 球半徑 ${C.R} 超過容許袋緣 ${allowedOverlap.toFixed(2)}`);
   }
   assert.ok(!P.collect(world).timedOut, '袋口附近的擊球必須能停止');
   const edge = Math.max(C.HOLE_OFF_CORNER + C.HOLE_R_CORNER * scale, C.HOLE_OFF_SIDE + C.HOLE_R_SIDE * scale);
@@ -21,6 +22,30 @@ function shot(x, y, vx, vy, scale) {
     '擦過袋口的球必須由導槽邊界擋回，不能飛出木框');
   checked++;
   return world;
+}
+
+// 中袋只放寬球半徑的極小比例；角袋的球心捕捉門檻維持完整進洞。
+for (const scale of [1, C.POCKET_SCALE_BIG]) {
+  for (const pocket of P.POCKETS) {
+    const fullBallRadius = pocket.hr * scale - C.R;
+    const captureRadius = P.capRadius(pocket, scale);
+    if (pocket.corner) {
+      assert.equal(captureRadius, fullBallRadius, '角袋仍要求球體完整進入洞口');
+    } else {
+      const easedRadius = C.R * 0.02;
+      assert.ok(captureRadius > fullBallRadius && captureRadius <= fullBallRadius + easedRadius + 0.001,
+        '中袋只容許很小的球體比例跨過袋緣');
+    }
+  }
+}
+
+// 角袋袋口與袋口碰撞點共用較窄的缺口，畫面與實際入口不可分離。
+assert.ok(C.CORNER_GAP < 34 && C.CORNER_GAP >= 33.5, '角袋入口只比原本略窄');
+for (const pocket of P.POCKETS.filter(p => p.corner)) {
+  const mouth = P.pocketGeometry(pocket, 1).mouth;
+  const width = Math.hypot(mouth[0].x - mouth[1].x, mouth[0].y - mouth[1].y);
+  assert.ok(Math.abs(width - C.CORNER_GAP * Math.SQRT2) < 0.001,
+    '角袋碰撞幾何應使用同一個較窄入口');
 }
 
 // 球體仍跨在洞緣上時不能直接消失；球的半徑必須納入判定。
