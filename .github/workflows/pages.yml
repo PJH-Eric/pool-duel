@@ -35,7 +35,7 @@ jobs:
         with:
           node-version: 22
 
-      - name: 跑測試
+      - name: 跑快速驗證
         run: npm run verify
 
       - name: 注入伺服器網址

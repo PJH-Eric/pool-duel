@@ -24,8 +24,8 @@ npm start
 ## 怎麼驗
 
 ```
-npm run verify          # 物理決定性／守恆、三種規則、AI 強弱、線上房間（約 1 分鐘）
-node tests/verify.js --quick     # 略過較慢的 AI 勝率
+npm test                # 快速完整檢查：物理、三種規則、袋口、AI 合法性與線上房間（約 1–2 分鐘）
+npm run verify:full     # 再加困難／簡單與神話／困難 AI 的 20 場勝率統計（約 10 分鐘）
 npm run test:online     # 只跑線上整合（真的開 WebSocket）
 ```
 

@@ -1,12 +1,12 @@
-/* 撞球對決：整合驗證（物理決定性、守恆、規則三種玩法、AI 強弱、線上房間）
-   執行：node tests/verify.js            （約 1 分鐘）
-         node tests/verify.js --quick    （略過較慢的 AI 勝率）*/
+/* 撞球對決：整合驗證（物理決定性、守恆、規則三種玩法、AI、線上房間）
+   執行：node tests/verify.js            （快速套件）
+         npm run verify:full              （另跑 20 場 AI 勝率統計，耗時較久）*/
 'use strict';
 const path = require('path');
 const { spawnSync } = require('child_process');
 const D = path.join(__dirname, '..', 'public', 'js') + path.sep;
 const P = require(D + 'physics.js'), Rules = require(D + 'rules.js'), AI = require(D + 'ai.js'), RNG = require(D + 'rng.js'), C = require(D + 'physics-config.js');
-const quick = process.argv.includes('--quick');
+const full = process.argv.includes('--full') && !process.argv.includes('--quick');
 let pass = 0, fail = 0;
 function section(t) { console.log('\n● ' + t); }
 function ok(c, m) { if (c) { pass++; console.log('  ✓ ' + m); } else { fail++; console.log('  ✗ ' + m); } }
@@ -182,12 +182,16 @@ section('AI');
   }
   let bad = 0; for (let i = 1; i <= 6; i++) for (const k of ['nine', 'eight', 'score']) { const r = play(k, 'kids', 'kids', i); if (r.err || r.s.phase !== 'over') bad++; }
   ok(bad === 0, '幼幼班 AI 在三種玩法都只出合法擊球並打得完（18 局）');
-  if (!quick) {
-    const N = 10; let hw = 0, ew = 0;
-    for (let i = 1; i <= N; i++) { const r = play('score', 'hard', 'easy', i); if (r.s.winner === r.s.turn || r.s.winner === (r.s.scores[0] > r.s.scores[1] ? 0 : 1)) { } const w = r.s.winner; const hardSeat = 0; if (w === hardSeat) hw++; }
+  if (full) {
+    const startedAt = Date.now();
+    const N = 10; let hw = 0;
+    for (let i = 1; i <= N; i++) { const r = play('score', 'hard', 'easy', i); if (r.s.winner === 0) hw++; }
     ok(hw >= N * 0.7, `14-1：困難 AI 對簡單 AI 贏 ${hw}/${N}（≥70%）`);
     let mw = 0; for (let i = 1; i <= N; i++) { const sw = i % 2, lv = sw ? ['hard', 'myth'] : ['myth', 'hard']; const r = play('score', lv[0], lv[1], i); if (r.s.winner === (sw ? 1 : 0)) mw++; }
     ok(mw >= N * 0.7, `14-1：神話 AI 對困難 AI 贏 ${mw}/${N}（≥70%）`);
+    console.log(`  AI 勝率統計耗時 ${((Date.now() - startedAt) / 1000).toFixed(1)} 秒`);
+  } else {
+    console.log('  （快速模式：略過 20 場 AI 勝率統計；完整驗證請執行 npm run verify:full）');
   }
 }
 
