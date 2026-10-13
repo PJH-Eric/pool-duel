@@ -217,6 +217,9 @@
     var callMode = Rules.needCall(state) ? 'eight' : (Rules.needCallBall(state) ? 'ball' : null);
     function cl(pocket, id) { return callMode === 'eight' ? pocket : (callMode === 'ball' ? { pocket: pocket, cb: id } : null); }
     function cl2(st, cand) { return Rules.needCall(st) ? cand.pocket : (Rules.needCallBall(st) ? { pocket: cand.pocket, cb: cand.target } : null); }
+    function isLegalNormalSafety(safetyShot) {
+      return level !== 'normal' || callMode !== 'ball' || !simulate(state, safetyShot).info.fouls.length;
+    }
     function noisy(dir, power) {
       var err = (rng.next() * 2 - 1) * L.err;
       var pw = power * (1 + (rng.next() * 2 - 1) * L.perr);
@@ -293,9 +296,10 @@
           }
         }
         var searchPick = null;
-        if (bs < 40 && L.search && callMode !== 'eight') {
+        var needsSafetyRescue = level === 'normal' && callMode === 'ball' && bs < -200;
+        if ((bs < 40 && L.search && callMode !== 'eight') || needsSafetyRescue) {
           var sr = searchBest(simState, spot, L, me, callMode === 'ball' ? { safety: 1 } : null, rng);
-          if (sr && sr.sc > bs + 10) searchPick = sr;
+          if (sr && sr.sc > bs + 10 && isLegalNormalSafety(sr.shot)) searchPick = sr;
         }
         if (L.deep && !searchPick && pool2.length) {                 // 神話：把前幾名的打法再往後預演一桿（打進後下一桿好不好打）
           pool2.sort(function (x, y) { return y.sco - x.sco; });
@@ -316,8 +320,11 @@
         }
         // 輸入誤差在決定之後才加（讓高難度偶有失誤、但不離譜）
         if (searchPick) {
-          var nS = noisy(searchPick.dir, searchPick.shot.power);
-          shot = mkShot(nS.dir, nS.power, searchPick.shot.sx, searchPick.shot.sy, spot, callMode === 'ball' ? { safety: 1 } : null);
+          if (level === 'normal' && callMode === 'ball') shot = searchPick.shot;
+          else {
+            var nS = noisy(searchPick.dir, searchPick.shot.power);
+            shot = mkShot(nS.dir, nS.power, searchPick.shot.sx, searchPick.shot.sy, spot, callMode === 'ball' ? { safety: 1 } : null);
+          }
         } else {
           var n2 = noisy(best.c.dir, best.sh.power);
           shot = mkShot(n2.dir, n2.power, best.sh.sx, best.sh.sy, spot, cl(best.c.pocket, best.c.target));
@@ -359,12 +366,16 @@
           }
         }
         var base = bestS || mkShot({ x: 1, y: 0 }, 400, 0, 0, spot, pc);
-        if (L.search) {                                  // 防守時也掃一輪角度：找解球／反彈碰球／安全球
+        var needsSafetySearch = level === 'normal' && callMode === 'ball' && bsS < -200;
+        if (L.search || needsSafetySearch) { // 14-1 沒有合法直線安全球時掃描角度，避免連續漏碰／犯規
           var sr2 = searchBest(simState, spot, L, me, pc, rng);
-          if (sr2 && sr2.sc > bsS) base = sr2.shot;
+          if (sr2 && sr2.sc > bsS && isLegalNormalSafety(sr2.shot)) base = sr2.shot;
         }
-        var n4 = noisy({ x: base.ax / 1e6, y: base.ay / 1e6 }, base.power);
-        shot = mkShot(n4.dir, n4.power, base.sx || 0, base.sy || 0, spot, pc); if (base.jump) shot.jump = 1;
+        if (level === 'normal' && callMode === 'ball' && base.safety === 1) shot = base;
+        else {
+          var n4 = noisy({ x: base.ax / 1e6, y: base.ay / 1e6 }, base.power);
+          shot = mkShot(n4.dir, n4.power, base.sx || 0, base.sy || 0, spot, pc); if (base.jump) shot.jump = 1;
+        }
       }
     }
     return { shot: shot, think: think };

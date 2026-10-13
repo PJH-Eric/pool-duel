@@ -110,10 +110,26 @@ section('規則：14-1 連續進球（叫球、安全球、犯規扣分、重新
 {
   const r = RNG.create(2); let g = Rules.newGame('score', { breaker: 0 }, r);
   ok(g.scores[0] === 0 && g.scores[1] === 0 && g.target === 30, '雙方起始 0 分、目標 30 分');
-  const matchRng = RNG.create(2);
-  g = Rules.newGame('score', { breaker: 0, target: 15 }, matchRng);
-  let n = 0; while (g.phase !== 'over' && n < 600) { const { shot } = AI.chooseShot(g, 'normal', matchRng); const e = Rules.validateShot(g, shot); if (e) { ok(false, '14-1 AI 出桿不合法：' + e); break; } const w = Rules.prepareWorld(g, shot); P.applyShot(w, shot); g = Rules.evaluateShot(g, shot, P.runToRest(w)).state; n++; }
-  ok(g.phase === 'over' && (g.scores[0] >= g.target || g.scores[1] >= g.target), '14-1 普通 AI 能完成 15 分測試局');
+  function runScoreAIMatch(seed) {
+    const matchRng = RNG.create(seed);
+    let match = Rules.newGame('score', { breaker: seed % 2 }, matchRng), shots = 0;
+    while (match.phase !== 'over' && shots < 600) {
+      const { shot } = AI.chooseShot(match, 'normal', matchRng);
+      if (Rules.validateShot(match, shot)) return { seed: seed, completed: false };
+      const world = Rules.prepareWorld(match, shot);
+      P.applyShot(world, shot);
+      match = Rules.evaluateShot(match, shot, P.runToRest(world)).state;
+      shots++;
+    }
+    return { seed: seed, completed: match.phase === 'over' && Math.max(...match.scores) >= match.target };
+  }
+  const stuckSeeds = [6, 8, 12]
+    .map(runScoreAIMatch)
+    .filter(function (result) { return !result.completed; })
+    .map(function (result) { return result.seed; });
+  ok(stuckSeeds.length === 0,
+    '14-1 普通 AI 三組回歸對局都能在 600 桿內達到 30 分' +
+    (stuckSeeds.length ? '（未完成種子：' + stuckSeeds.join(', ') + '）' : ''));
   const k = Rules.newGame('score', { breaker: 0, kids: true }, RNG.create(2));
   ok(k.kids === true && !Rules.needCallBall(k), '幼幼班不用叫球');
   // 手工情境：叫球
