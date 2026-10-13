@@ -17,6 +17,8 @@
       this.raf = 0; this.last = 0; this.running = false;
       this.state = null; this.world = null; this.cfg = null;
       this.phase = 'idle';                  // idle | aiming | waiting | thinking | strike | roll | choice | over
+      this.statusRevision = 0;
+      this.statusState = null;
       this.angle = 0; this.fine = 0; this.power = 0.5; this.spin = { u: 0, v: 0 }; this.jump = false;
       this.call = -1; this.callBall = -1; this.safety = false; this.hand = null; this.dragMode = null;
       this.dropping = []; this.queue = []; this.pendingSettle = null; this.provisional = false;
@@ -33,6 +35,7 @@
       this.cfg = Object.assign({ mode: 'ai', kind: 'nine', level: 'easy', mySeat: 0, aimMode: 'full', seats: [{ name: '你' }, { name: '電腦' }] }, cfg);
       this.clearTimers(); this.queue = []; this.pendingSettle = null; this.world = null; this.dropping = []; this.curShot = null; this.awaitEcho = false; this.provisional = false;
       this.stats = [0, 1].map(() => ({ shots: 0, potted: 0, pottedBalls: [], fouls: 0, run: 0, best: 0 }));
+      this.statusState = null;
       this.rng = RNG.create(this.cfg.seed || RNG.newSeed());
       this.mySeat = this.cfg.mySeat;
       this.r.setTheme({ felt: this.store.get('felt'), scene: this.store.get('scene'), cue: this.store.get('cue'), bigNumbers: this.store.get('bigNumbers') });
@@ -66,6 +69,7 @@
 
     /* ---------- 回合開始 ---------- */
     beginTurn(initial) {
+      this.statusRevision++;
       const s = this.state; this.call = -1; this.callBall = -1; this.safety = false; this.hand = null; this.remoteAim = null;
       if (s.phase === 'over') { this.phase = 'over'; this.refresh(); this.showResult(); return; }
       if (s.phase === 'choice') { this.phase = 'choice'; this.refresh(); this.handleChoice(); return; }
@@ -113,6 +117,7 @@
     /* ---------- HUD 資料 ---------- */
     refresh() {
       const s = this.state, kind = s.kind, seats = [];
+      if (this.statusState !== s) { this.statusState = s; this.statusRevision++; }
       for (let i = 0; i < 2; i++) {
         const o = { seat: i, name: this.seatName(i), you: i === this.mySeat, isTurn: s.turn === i && s.phase !== 'over', line1: '', line2: '', balls: [], pottedBalls: (this.stats[i] && this.stats[i].pottedBalls || []).slice(), score: null };
         if (kind === 'eight') {
@@ -147,7 +152,7 @@
         if (!hint) hint = this.ruleLine(s);
       } else hint = this.ruleLine(s);
       if (s.last && s.last.fouls && s.last.fouls.length && s.phase !== 'over') hint = '上一桿：' + this.seatName(s.last.player) + ' 犯規（' + s.last.fouls.map(f => Rules.FOUL_TEXT[f]).join('、') + '）' + (s.hand && s.hand.player === this.mySeat ? '，你可以自由放置母球' : '');
-      this.ui.hud && this.ui.hud({ kind, kindName: Rules.KIND_NAME[kind], seats, turn: s.turn, status, hint, phase: this.phase, over: s.phase === 'over', mode: this.cfg.mode, practice: this.cfg.mode === 'practice', potted: this.cfg.mode === 'practice' ? this.practiceCount || 0 : null });
+      this.ui.hud && this.ui.hud({ kind, kindName: Rules.KIND_NAME[kind], seats, turn: s.turn, status, statusRevision: this.statusRevision, hint, phase: this.phase, over: s.phase === 'over', mode: this.cfg.mode, practice: this.cfg.mode === 'practice', potted: this.cfg.mode === 'practice' ? this.practiceCount || 0 : null });
       this.pushControls();
     }
     targetText(s, seat, withDot) {
@@ -494,8 +499,8 @@
       } else if (info.pocketedObjects && info.pocketedObjects.length) parts.push(name + ' 進袋 ' + info.pocketedObjects.join('、') + ' 號');
       (info.notes || []).forEach(n => { if (n.code === 'assign') parts.push(this.seatName(n.player) + ' 打' + (n.group === 'solid' ? '全色球' : '半色球')); });
       if (!parts.length && after.phase !== 'over') parts.push(name + ' 沒有進球');
-      this.ui.toast && this.ui.toast(parts.join('，'), info.fouls && info.fouls.length ? 'foul' : 'info');
       this.beginTurn();
+      this.ui.toast && this.ui.toast(parts.join('，'), info.fouls && info.fouls.length ? 'foul' : 'info');
       this.drainQueue();
     }
     practiceFix(info) {
@@ -557,9 +562,9 @@
       const r = Rules.resolveChoice(s, c, this.rng);
       if (r.error) return;
       this.state = r.state;
-      this.ui.toast && this.ui.toast(c === 'rerack' ? '重擺重開' : (c === 'respot' ? '8 號球放回置球點' : '接受現況'));
       this.r.resetRolls();
       this.beginTurn();
+      this.ui.toast && this.ui.toast(c === 'rerack' ? '重擺重開' : (c === 'respot' ? '8 號球放回置球點' : '接受現況'));
     }
 
     /* ---------- 結算 ---------- */
@@ -632,15 +637,17 @@
     }
     applyStateMsg(m) {
       const before = this.state;
+      let notice = null, noticeKind = 'message';
       this.state = m.state; this.provisional = false;
       if (m.turnMs != null) this.turnEnd = m.turnMs ? performance.now() + m.turnMs : 0;
-      if (m.info && m.info.fouls && m.info.fouls.includes('timeout')) { Sound.sfx.foul(); this.ui.toast && this.ui.toast(this.seatName(m.info.player) + ' 回合超時，換對手出桿，並取得自由球', 'foul'); }
+      if (m.info && m.info.fouls && m.info.fouls.includes('timeout')) { Sound.sfx.foul(); notice = this.seatName(m.info.player) + ' 回合超時，換對手出桿，並取得自由球'; noticeKind = 'foul'; }
       if (m.choice) {
         this.r.resetRolls();
         const t = m.choice.choice === 'rerack' ? '重擺重開' : (m.choice.choice === 'respot' ? '8 號球放回置球點' : '接受現況');
-        this.ui.toast && this.ui.toast(this.seatName(m.choice.player) + ' 選擇：' + t + (m.choice.by === 'timeout' ? '（時間到，自動選擇）' : ''));
+        notice = this.seatName(m.choice.player) + ' 選擇：' + t + (m.choice.by === 'timeout' ? '（時間到，自動選擇）' : '');
       }
       this.beginTurn();
+      if (notice) this.ui.toast && this.ui.toast(notice, noticeKind);
     }
     drainQueue() {
       if (!this.queue.length || this.busy()) return;

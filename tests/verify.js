@@ -6,6 +6,7 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 const D = path.join(__dirname, '..', 'public', 'js') + path.sep;
 const P = require(D + 'physics.js'), Rules = require(D + 'rules.js'), AI = require(D + 'ai.js'), RNG = require(D + 'rng.js'), C = require(D + 'physics-config.js');
+require('./game-status-check')();
 const full = process.argv.includes('--full') && !process.argv.includes('--quick');
 let pass = 0, fail = 0;
 function section(t) { console.log('\n● ' + t); }

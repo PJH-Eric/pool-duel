@@ -6,7 +6,13 @@
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const firstChar = n => Array.from(String(n || '?'))[0] || '?';
   const App = { screen: 'home', game: null, back: 'home', setupNote: '' };
-  let gameStatusText = '', gameStatusMine = false, gameStatusToastTimer = 0;
+  const gameStatus = root.PoolGameStatus.create(view => {
+    const el = $('#gStatus');
+    el.textContent = view.text;
+    el.classList.toggle('mine', view.mine);
+    el.classList.toggle('toast-message', view.kind === 'message');
+    el.classList.toggle('toast-foul', view.kind === 'foul');
+  });
   root.PoolApp = App;
 
   /* ---------- 小工具 ---------- */
@@ -300,14 +306,10 @@
   }
   App.ui = {
     hud(vm) {
-      const st = $('#gStatus');
-      gameStatusText = vm.status;
-      gameStatusMine = vm.status.indexOf('輪到你') === 0 || vm.status === '請做出選擇';
-      if (!st.dataset.toastActive) {
-        st.textContent = gameStatusText;
-        st.classList.toggle('mine', gameStatusMine);
-        st.classList.remove('toast-message', 'toast-foul');
-      }
+      const resolvingShot = ['strike', 'roll', 'settle'].includes(vm.phase);
+      const text = resolvingShot ? '球況更新中…' : vm.status;
+      const mine = !resolvingShot && (text.indexOf('輪到你') === 0 || text === '請做出選擇');
+      gameStatus.update(text, mine, vm.statusRevision + ':' + vm.phase);
       let html = '';
       vm.seats.forEach(s => {
         const tag = s.you ? '<span class="tag">你</span>' : '';
@@ -332,20 +334,7 @@
     power(p) { $('#powerVal').textContent = Math.round(p * 100) + '%'; powerSlider.render(); },
     fine(d) { $('#fineVal').textContent = (d >= 0 ? '+' : '') + d.toFixed(2) + '°'; fineSlider.render(); },
     spin(u, v) { setSpinDot(u, v); },
-    toast(text, kind) {
-      const el = $('#gStatus');
-      el.dataset.toastActive = 'true';
-      el.textContent = text;
-      el.classList.remove('mine', 'toast-message', 'toast-foul');
-      el.classList.add(kind === 'foul' ? 'toast-foul' : 'toast-message');
-      clearTimeout(gameStatusToastTimer);
-      gameStatusToastTimer = setTimeout(() => {
-        delete el.dataset.toastActive;
-        el.textContent = gameStatusText;
-        el.classList.toggle('mine', gameStatusMine);
-        el.classList.remove('toast-message', 'toast-foul');
-      }, 2800);
-    },
+    toast(text, kind) { gameStatus.toast(text, kind); },
     timer(sec, mine) {
       const el = $('#gTimer'), wrap = $('#gTimerWrap');
       if (sec == null) { el.textContent = '--'; el.classList.remove('low'); return; }
