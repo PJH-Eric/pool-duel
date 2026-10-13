@@ -153,7 +153,7 @@
       seg(sg, OPT[k], L.create[k], v => { L.create[k] = v; buildCreateForm(); });
       f.appendChild(lb); f.appendChild(sg);
     });
-    addFixedTurnRow(f, 'form-grid');
+    addFixedTurnRow(f);
   }
   function renderRooms() {
     const box = $('#roomList');
@@ -191,7 +191,7 @@
       else { const v = (OPT[k].find(o => String(o[0]) === String(r.cfg[k])) || [0, ''])[1]; const sp = document.createElement('span'); sp.className = 'cfg-val'; sp.textContent = v; row.appendChild(sp); }
       cfg.appendChild(row);
     });
-    addFixedTurnRow(cfg, 'cfg-row');
+    addFixedTurnRow(cfg);
     renderInvite();
     const me = myMember();
     $('#btnTakeSeat').classList.toggle('hidden', !r.canTakeSeat);
@@ -206,10 +206,14 @@
     $('#roomHint').textContent = hint;
     $('#roomDc').classList.toggle('hidden', !r.dc);
   }
-  function addFixedTurnRow(container, className) {
-    const row = document.createElement('div'); row.className = className + ' fixed-turn-row';
+  function addFixedTurnRow(container) {
+    const row = document.createElement('div'); row.className = 'fixed-turn-row';
     const label = document.createElement('span'); label.className = 'lbl'; label.textContent = '回合時間';
-    const value = document.createElement('span'); value.className = 'cfg-val'; value.textContent = '35 秒・每位玩家每盤可延長一次（+25 秒）';
+    const value = document.createElement('div'); value.className = 'cfg-val';
+    const time = document.createElement('span'); time.className = 'fixed-turn-time'; time.textContent = '35 秒';
+    const detail = document.createElement('span'); detail.className = 'fixed-turn-detail'; detail.textContent = '每位玩家每盤可延長一次';
+    const extension = document.createElement('span'); extension.className = 'fixed-turn-extension'; extension.textContent = '+25 秒';
+    detail.appendChild(extension); value.appendChild(time); value.appendChild(detail);
     row.appendChild(label); row.appendChild(value); container.appendChild(row);
   }
   function inviteUrl(token) {
