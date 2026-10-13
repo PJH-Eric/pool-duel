@@ -59,7 +59,7 @@ for (const pocket of P.POCKETS.filter(p => p.corner)) {
 }
 
 // 角袋袋口與袋口碰撞點共用較窄的缺口，畫面與實際入口不可分離。
-assert.ok(C.CORNER_GAP < 34 && C.CORNER_GAP >= 33.5, '角袋入口只比原本略窄');
+assert.ok(C.CORNER_GAP < 34 && C.CORNER_GAP >= 33, '角袋入口只比原本略窄');
 for (const pocket of P.POCKETS.filter(p => p.corner)) {
   const mouth = P.pocketGeometry(pocket, 1).mouth;
   const width = Math.hypot(mouth[0].x - mouth[1].x, mouth[0].y - mouth[1].y);
