@@ -4,6 +4,7 @@
   --cream: #f3e6cf; --muted: #a58f70; --brass: #e3a840; --brass-d: #a6741a; --brass-l: #ffd777;
   --green: #1f8f5a; --green-d: #0f5c38; --red: #e0503f; --blue: #4aa3ff;
   --seat0: #4aa3ff; --seat1: #ff6b5e;
+  --scroll-track: #1a0f09; --scroll-thumb: #a6741a;
   --chat-rail-width: clamp(220px, 16vw, 240px);
   --font: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", "Heiti TC", system-ui, -apple-system, sans-serif;
   --r: 14px;
@@ -14,6 +15,13 @@ body { -webkit-user-select: none; user-select: none; }
 input, .selectable { -webkit-user-select: text; user-select: text; }
 button { font-family: inherit; }
 #app { position: fixed; inset: 0; background: radial-gradient(120% 90% at 50% 0%, #2c1a10 0%, #150c07 60%, #0c0604 100%); }
+#app, #app * { scrollbar-color: var(--scroll-thumb) var(--scroll-track); scrollbar-width: thin; }
+#app *::-webkit-scrollbar { width: 10px; height: 10px; }
+#app *::-webkit-scrollbar-track { background: var(--scroll-track); border-radius: 999px; }
+#app *::-webkit-scrollbar-thumb { background: linear-gradient(180deg, var(--brass-l), var(--scroll-thumb)); border: 2px solid var(--scroll-track); border-radius: 999px; }
+#app *::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #ffe7a0, #bd8135); }
+#app *::-webkit-scrollbar-corner { background: var(--scroll-track); }
+#app *::-webkit-scrollbar-button { display: none; }
 .hidden { display: none !important; }
 .screen { position: absolute; inset: 0; display: none; flex-direction: column; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
 .screen.active { display: flex; }
@@ -163,7 +171,7 @@ button { font-family: inherit; }
 .pseat .pscore { flex: none; margin-left: auto; color: var(--brass-l); font-size: 18px; font-weight: 900; }
 .potted-row { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; min-width: 0; border-top: 1px solid rgba(227,168,64,.16); padding-top: 4px; }
 .potted-label { flex: none; color: var(--muted); font-size: 10px; font-weight: 800; }
-.potted-history { display: flex; align-items: center; gap: 3px; min-width: 0; overflow-x: auto; white-space: nowrap; padding: 2px 2px 3px; scrollbar-width: thin; scrollbar-color: var(--brass-d) transparent; }
+.potted-history { display: flex; align-items: center; gap: 3px; min-width: 0; overflow-x: auto; white-space: nowrap; padding: 2px 2px 3px; }
 .potted-history .mini-ball { flex: none; width: 18px; height: 18px; line-height: 18px; font-size: 8px; }
 .potted-history .mini-ball b { inset: 4px; font-size: 7px; line-height: 9px; }
 .potted-empty { color: #a58f70; font-size: 10.5px; }
