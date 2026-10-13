@@ -26,9 +26,87 @@
     [W / 2 - SG, -JR], [W / 2 + SG, -JR], [W / 2 - SG, H + JR], [W / 2 + SG, H + JR]
   ];
 
-  function capRadius(p, scale, speed) {
-    var k = speed ? Math.min(1, speed / C.CAP_FAST_V) : 0;
-    return p.hr * scale + C.CAP_MARGIN - C.CAP_FAST_PEN * k;
+  function capRadius(p, scale) {
+    return Math.max(0, p.hr * (scale || 1) - R);
+  }
+
+  var pocketGeometryCache = {};
+  function pocketGeometry(p, scale) {
+    scale = scale || 1;
+    var key = POCKETS.indexOf(p) + ':' + scale;
+    if (pocketGeometryCache[key]) return pocketGeometryCache[key];
+    var sx = p.x ? -1 : 1, sy = p.y ? -1 : 1, radius = p.hr * scale;
+    var a = p.corner ? { x: p.x + sx * CG, y: p.y } : { x: p.x + SG, y: p.y };
+    var b = p.corner ? { x: p.x, y: p.y + sy * CG } : { x: p.x - SG, y: p.y };
+    function tangent(point, other) {
+      var dx = point.x - p.hx, dy = point.y - p.hy, d2 = dx * dx + dy * dy;
+      var t = radius * radius / d2, q = radius * Math.sqrt(Math.max(0, d2 - radius * radius)) / d2;
+      var first = { x: p.hx + t * dx - q * dy, y: p.hy + t * dy + q * dx };
+      var second = { x: p.hx + t * dx + q * dy, y: p.hy + t * dy - q * dx };
+      var fx = first.x - other.x, fy = first.y - other.y, sx = second.x - other.x, sy = second.y - other.y;
+      var d1 = fx * fx + fy * fy, d2other = sx * sx + sy * sy;
+      return d1 > d2other ? first : second;
+    }
+    var ta = tangent(a, b), tb = tangent(b, a);
+    var towardX = (a.x + b.x) / 2 - p.hx, towardY = (a.y + b.y) / 2 - p.hy;
+    var length = Math.sqrt(towardX * towardX + towardY * towardY);
+    var back = { x: p.hx - radius * towardX / length, y: p.hy - radius * towardY / length };
+    var edges = [[a, ta]];
+    // 用平方根二分圓弧，維持伺服器與瀏覽器的確定性，避開三角函式差異。
+    function arc(first, last, depth) {
+      if (!depth) { edges.push([first, last]); return; }
+      var dx = (first.x + last.x) / 2 - p.hx, dy = (first.y + last.y) / 2 - p.hy;
+      var distance = Math.sqrt(dx * dx + dy * dy);
+      var middle = { x: p.hx + radius * dx / distance, y: p.hy + radius * dy / distance };
+      arc(first, middle, depth - 1); arc(middle, last, depth - 1);
+    }
+    arc(ta, back, 3); arc(back, tb, 3);
+    edges.push([tb, b]);
+    return pocketGeometryCache[key] = { mouth: [a, b], throat: [a, ta, tb, b], edges: edges };
+  }
+
+  function pocketGuideCollide(w, b) {
+    if (b.x > R && b.x < W - R && b.y > R && b.y < H - R) return;
+    for (var pi = 0; pi < POCKETS.length; pi++) {
+      var p = POCKETS[pi];
+      if (Math.abs(b.x - p.hx) > 90 || Math.abs(b.y - p.hy) > 90) continue;
+      var edges = pocketGeometry(p, w.pocketScale).edges;
+      for (var i = 0; i < edges.length; i++) {
+        var a = edges[i][0], end = edges[i][1], dx = end.x - a.x, dy = end.y - a.y;
+        var length2 = dx * dx + dy * dy, length = Math.sqrt(length2);
+        var t = ((b.x - a.x) * dx + (b.y - a.y) * dy) / length2;
+        if (t < 0 || t > 1) continue;
+        var nx = -dy / length, ny = dx / length;
+        if ((p.hx - a.x) * nx + (p.hy - a.y) * ny < 0) { nx = -nx; ny = -ny; }
+        var distance = (b.x - a.x) * nx + (b.y - a.y) * ny;
+        if (distance >= R || distance <= -R) continue;
+        b.x += nx * (R - distance); b.y += ny * (R - distance);
+        var vn = b.vx * nx + b.vy * ny;
+        if (vn < 0) {
+          b.vx -= (1 + C.E_JAW) * vn * nx; b.vy -= (1 + C.E_JAW) * vn * ny;
+          railHit(w, b, -vn);
+        }
+      }
+    }
+  }
+
+  // 檢查整段移動，避免高速球跨過小型袋口的有效範圍。
+  function capturePocket(w, b, fromX, fromY) {
+    if (b.x > R && b.x < W - R && b.y > R && b.y < H - R &&
+        fromX > R && fromX < W - R && fromY > R && fromY < H - R) return false;
+    for (var pi = 0; pi < POCKETS.length; pi++) {
+      var p = POCKETS[pi], radius = capRadius(p, w.pocketScale);
+      if (radius <= 0) continue;
+      var dx = b.x - fromX, dy = b.y - fromY, fx = fromX - p.hx, fy = fromY - p.hy;
+      var length2 = dx * dx + dy * dy;
+      var t = length2 > 0 ? Math.max(0, Math.min(1, -(fx * dx + fy * dy) / length2)) : 0;
+      var qx = fx + dx * t, qy = fy + dy * t;
+      if (qx * qx + qy * qy > radius * radius) continue;
+      b.x = fromX + dx * t; b.y = fromY + dy * t;
+      pocketBall(w, b, pi);
+      return true;
+    }
+    return false;
   }
 
   function makeWorld(balls, opts) {
@@ -167,6 +245,7 @@
       for (i = 0; i < n; i++) {
         b = balls[i];
         if (b.pocket >= 0) continue;
+        b.previousX = b.x; b.previousY = b.y;
         if (b.vx !== 0 || b.vy !== 0) {
           b.x += b.vx * h; b.y += b.vy * h;
           var sp = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
@@ -198,18 +277,12 @@
       for (i = 0; i < n; i++) {
         b = balls[i];
         if (b.pocket >= 0) continue;
+        if (b.air > 0) { wallCollide(w, b); continue; } // 空中不會進袋、也不會撞袋口尖角
+        if (capturePocket(w, b, b.previousX, b.previousY)) continue;
         wallCollide(w, b);
-        if (b.air > 0) continue;                      // 空中不會進袋、也不會撞袋口尖角
         jawCollide(w, b);
-        for (var p = 0; p < 6; p++) {
-          var P = POCKETS[p], dx = b.x - P.hx, dy = b.y - P.hy, cr = capRadius(P, w.pocketScale, Math.sqrt(b.vx * b.vx + b.vy * b.vy));
-          if (dx * dx + dy * dy < cr * cr) { pocketBall(w, b, p); break; }
-        }
-        if (b.pocket < 0 && (b.x < -R || b.x > W + R || b.y < -R || b.y > H + R)) {
-          var bp = b.x < W / 2 ? (b.y < H / 2 ? 0 : 3) : (b.y < H / 2 ? 2 : 5);
-          if (Math.abs(b.x - W / 2) < 60) bp = b.y < H / 2 ? 1 : 4;
-          pocketBall(w, b, bp);
-        }
+        pocketGuideCollide(w, b);
+        capturePocket(w, b, b.x, b.y);
       }
       w.t += h;
     }
@@ -330,7 +403,7 @@
   function ballCountFor(kind) { return kind === 'nine' ? 9 : 15; }
 
   return {
-    C: C, POCKETS: POCKETS, JAWS: JAWS, capRadius: capRadius,
+    C: C, POCKETS: POCKETS, JAWS: JAWS, capRadius: capRadius, pocketGeometry: pocketGeometry,
     makeWorld: makeWorld, resetCtx: resetCtx, stepWorld: stepWorld, isAtRest: isAtRest, runToRest: runToRest,
     applyShot: applyShot, collect: collect, quantizeDir: quantizeDir, powerToSpeed: powerToSpeed, snapshot: snapshot, hashState: hashState,
     rack: rack, ballCountFor: ballCountFor, ball: ball

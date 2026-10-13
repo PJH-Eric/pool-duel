@@ -134,17 +134,17 @@ section('推桿／定桿／拉桿與滑動');
 
 section('進袋判定（與畫面黑洞一致）');
 {
-  // 球心落在畫面上黑洞範圍內（靠近桌內的那一側）就必須掉進去；離洞外緣超過寬容度則不會
+  // 球體完整進入可見圓形袋口才落袋；只擦到洞緣不能提前計分。
   let allIn = true, noneOut = true;
   P.POCKETS.forEach((pk, i) => {
     const ix = pk.x < C.W / 2 ? 1 : (pk.x > C.W / 2 ? -1 : 0), iy = pk.y < C.H / 2 ? 1 : -1;
     const n = pk.corner ? Math.hypot(ix, iy) : 1, ux = ix / n, uy = iy / n;
     const inside = (d) => { const w = P.makeWorld([{ id: 0, x: pk.hx + ux * d, y: pk.hy + uy * d, pocket: -1 }]); w.balls[0].vx = ux * -30; w.balls[0].vy = uy * -30; for (let k = 0; k < 6; k++) P.stepWorld(w); return w.balls[0].pocket === i; };
-    if (!inside(pk.hr - 2)) allIn = false;            // 球心在黑洞邊緣內側 2 單位
-    if (inside(pk.hr + C.CAP_MARGIN + 6)) noneOut = false;   // 球心在黑洞外緣外 9 單位：不該掉
+    if (!inside(pk.hr - C.R - 2)) allIn = false;
+    if (inside(pk.hr - 0.5)) noneOut = false;
   });
-  ok(allIn, '球心在黑洞邊緣內（六個袋口）→ 掉進袋');
-  ok(noneOut, '球心離黑洞外緣太遠 → 不會掉進袋');
+  ok(allIn, '球體完整進入圓形袋口（六袋）→ 掉進袋');
+  ok(noneOut, '球體仍跨在洞緣 → 不會提前進袋');
   let approaches = true;
   for (const scale of [1, C.POCKET_SCALE_BIG]) for (const speed of [180, 900, 2500]) {
     P.POCKETS.forEach((pk, i) => {
@@ -157,6 +157,8 @@ section('進袋判定（與畫面黑洞一致）');
     });
   }
   ok(approaches, '六袋正向入袋：慢／中／高速、標準／加大袋口（36 情境）');
+  const regression = spawnSync(process.execPath, [path.join(__dirname, 'pocket-check.js')], { encoding: 'utf8' });
+  ok(regression.status === 0, (regression.stdout || regression.stderr).trim());
 }
 
 section('跳桿');

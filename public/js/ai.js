@@ -28,14 +28,9 @@
     }
     return true;
   }
-  function aimPoint(p, scale) {
+  function aimPoint(p) {
     var P0 = P.POCKETS[p];
-    if (P0.corner) {
-      var dx = W / 2 - P0.x, dy = H / 2 - P0.y, l = Math.sqrt(dx * dx + dy * dy);
-      var d = 4 * scale;
-      return { x: P0.x + dx / l * d, y: P0.y + dy / l * d };
-    }
-    return { x: P0.x, y: P0.y === 0 ? 5 : H - 5 };
+    return { x: P0.hx, y: P0.hy };
   }
 
   // 幾何候選：直接把目標球打進袋
@@ -44,14 +39,13 @@
     var balls = state.balls, out = [];
     var targets = Rules.legalFirstIds(state);
     var needCall = Rules.needCall(state);
-    var scale = state.bigPockets ? C.POCKET_SCALE_BIG : 1;
     var cx = cue.x, cy = cue.y;
     for (var ti = 0; ti < targets.length; ti++) {
       var T = Rules.getBall(state, targets[ti]);
       if (!T || T.pocket >= 0) continue;
       // 九球/八球：8 號球在未輪到時不當作目標（legalFirstIds 已處理）
       for (var p = 0; p < 6; p++) {
-        var ap = aimPoint(p, scale);
+        var ap = aimPoint(p);
         var tx = ap.x - T.x, ty = ap.y - T.y, d2 = Math.sqrt(tx * tx + ty * ty);
         if (d2 < 1) continue;
         var ux = tx / d2, uy = ty / d2;
@@ -151,7 +145,7 @@
     for (var ti = 0; ti < probe.length && spots.length < 80; ti++) {
       var T = Rules.getBall(state, probe[ti]);
       for (var p = 0; p < 6; p++) {
-        var ap = aimPoint(p, 1), tx = ap.x - T.x, ty = ap.y - T.y, d = Math.sqrt(tx * tx + ty * ty);
+        var ap = aimPoint(p), tx = ap.x - T.x, ty = ap.y - T.y, d = Math.sqrt(tx * tx + ty * ty);
         if (d < 1 || (!P.POCKETS[p].corner && Math.abs(tx / d) > 0.8)) continue;
         var ux = tx / d, uy = ty / d, gx = T.x - ux * 2 * R, gy = T.y - uy * 2 * R;
         [110, 220].forEach(function (back) { spots.push({ x: gx - ux * back, y: gy - uy * back }); });

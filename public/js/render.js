@@ -210,30 +210,10 @@
       for (const [x, y] of P.JAWS) { c.beginPath(); c.arc(x, y, C.JAW_R, 0, TWO_PI); c.fill(); }
       // Pocket throats open at the rail edge and carry the well beyond the frame.
       for (const p of P.POCKETS) {
-        const r = p.hr * (state.pocketScale || 1);
-        const throat = '#07100b';
-        if (p.corner) {
-          const sx = p.x ? -1 : 1, sy = p.y ? -1 : 1;
-          c.save(); c.translate(p.x, p.y); c.scale(sx, sy);
-          const hx = (p.hx - p.x) * sx, hy = (p.hy - p.y) * sy;
-          // A flat trapezoid joins both cushion tips to the external round well.
-          c.beginPath();
-          c.moveTo(C.CORNER_GAP, 0);
-          c.lineTo(hx + r + 2, hy);
-          c.lineTo(hx, hy + r + 2);
-          c.lineTo(0, C.CORNER_GAP);
-          c.closePath(); c.fillStyle = felt.cushion; c.fill();
-          c.restore();
-        } else {
-          const edgeY = p.y, direction = p.y ? 1 : -1;
-          const edgeX = p.x;
-          c.beginPath();
-          c.moveTo(edgeX - C.SIDE_GAP, edgeY); c.lineTo(edgeX + C.SIDE_GAP, edgeY);
-          c.bezierCurveTo(edgeX + C.SIDE_GAP - 3, edgeY + direction * 12, edgeX + 12, p.hy - direction * 8, edgeX + 9, p.hy);
-          c.lineTo(edgeX - 9, p.hy);
-          c.bezierCurveTo(edgeX - 12, p.hy - direction * 8, edgeX - C.SIDE_GAP + 3, edgeY + direction * 12, edgeX - C.SIDE_GAP, edgeY);
-          c.closePath(); c.fillStyle = throat; c.fill();
-        }
+        const points = P.pocketGeometry(p, state.pocketScale).throat;
+        c.beginPath(); c.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i++) c.lineTo(points[i].x, points[i].y);
+        c.closePath(); c.fillStyle = p.corner ? felt.cushion : '#07100b'; c.fill();
       }
       // Flat circular wells keep the opening crisp without a cast shadow.
       for (const p of P.POCKETS) {
