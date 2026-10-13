@@ -108,6 +108,8 @@ button { font-family: inherit; }
 
 /* ---------- 表單與房間 ---------- */
 .nick-row .lbl { flex: none; }
+.nick-row .field { flex: 1; min-width: 0; }
+#btnNickRandom { flex: none; white-space: nowrap; min-height: 44px; }
 .form-grid { display: grid; grid-template-columns: 110px 1fr; gap: 12px 12px; align-items: center; }
 .form-grid .lbl { font-size: 14px; }
 .room-list { display: flex; flex-direction: column; gap: 10px; }
