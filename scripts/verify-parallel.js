@@ -3,17 +3,19 @@ const path = require('path');
 const { spawn } = require('child_process');
 const startedAt = Date.now();
 const suites = [
-  ['物理／規則／AI', 'verify.js', '--no-online', ...process.argv.slice(2)],
+  ['物理／規則／AI', 'verify.js', '--no-online', '--full', ...process.argv.slice(2)],
   ['線上整合', 'online-check.js'],
+  ['JavaScript 語法', '../scripts/check-syntax.js'],
 ];
 
 Promise.all(suites.map(([name, file, ...args]) => new Promise(resolve => {
   const start = Date.now();
   const child = spawn(process.execPath, [path.join(__dirname, '..', 'tests', file), ...args], {
-    stdio: 'inherit', timeout: file === 'online-check.js' ? 180000 : 0,
+    stdio: 'inherit', timeout: 175000,
   });
   child.on('error', error => console.error(`${name} 無法啟動：${error.message}`));
   child.on('close', code => {
+    if (code === null) console.error(`${name} 超過 175 秒或遭中止，驗證失敗。`);
     console.log(`${name}：${code === 0 ? '通過' : '失敗'}，耗時 ${((Date.now() - start) / 1000).toFixed(1)} 秒`);
     resolve(code === 0);
   });

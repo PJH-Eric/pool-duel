@@ -53,7 +53,7 @@ function playInWorker(match) {
       reject(error);
     });
     worker.once('exit', code => {
-      if (!settled && code !== 0) reject(new Error(`AI worker exited with code ${code}`));
+      if (!settled) reject(new Error(`AI worker exited without a result (code ${code})`));
     });
   });
 }

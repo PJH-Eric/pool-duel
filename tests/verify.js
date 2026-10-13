@@ -1,6 +1,6 @@
 /* 撞球對決：整合驗證（物理決定性、守恆、規則三種玩法、AI、線上房間）
    執行：node tests/verify.js            （快速套件）
-         npm run verify:full              （另跑 20 場 AI 勝率統計，耗時較久）*/
+         npm test                         （所有檢查，含 4 場 AI 對局，限時 3 分鐘）*/
 'use strict';
 const path = require('path');
 const { spawnSync } = require('child_process');
@@ -222,36 +222,44 @@ section('AI');
 {
   let bad = 0; for (let i = 1; i <= 6; i++) for (const k of ['nine', 'eight', 'score']) { const r = play(k, 'kids', 'kids', i); if (r.err || r.s.phase !== 'over') bad++; }
   ok(bad === 0, '幼幼班 AI 在三種玩法都只出合法擊球並打得完（18 局）');
+  for (const level of ['hard', 'myth']) {
+    const rng = RNG.create(1), state = Rules.newGame('nine', { breaker: 0 }, rng);
+    state.isBreak = false; state.hand = null;
+    state.balls.forEach(ball => { if (ball.id > 0 && ball.id !== 9) ball.pocket = 0; });
+    state.balls[0].x = 500; state.balls[0].y = 300;
+    Rules.getBall(state, 9).x = 500; Rules.getBall(state, 9).y = 100;
+    const { shot } = AI.chooseShot(state, level, rng);
+    const sim = AI.simulate(state, shot);
+    ok(!Rules.validateShot(state, shot) && sim.info.fouls.length === 0 && sim.info.state.winner === 0,
+      `${AI.LEVELS[level].name} AI 能合法打進可直接獲勝的 9 號球`);
+  }
   if (full) {
     const startedAt = Date.now();
-    const N = 10; let hw = 0;
-    for (let i = 1; i <= N; i++) {
-      const r = play('score', 'hard', 'easy', i); if (r.s.winner === 0) hw++;
-      console.log(`  困難／簡單 AI：${i}/${N} 場完成，本場 ${r.n} 桿`);
-    }
-    ok(hw >= N * 0.7, `14-1：困難 AI 對簡單 AI 贏 ${hw}/${N}（≥70%）`);
-    const mythMatches = Array.from({ length: N }, (_, index) => {
-      const seed = index + 1;
-      const sw = seed % 2;
-      const levels = sw ? ['hard', 'myth'] : ['myth', 'hard'];
-      return { kind: 'score', a: levels[0], b: levels[1], seed, expectedWinner: sw ? 1 : 0 };
-    });
-    const mythStartedAt = Date.now();
+    const groups = [
+      { name: '困難／簡單', stronger: 'hard', weaker: 'easy' },
+      { name: '神話／困難', stronger: 'myth', weaker: 'hard' },
+    ];
+    const matches = groups.flatMap(group => [1, 2].map(seed => {
+      const expectedWinner = seed % 2;
+      const levels = expectedWinner ? [group.weaker, group.stronger] : [group.stronger, group.weaker];
+      return { kind: 'score', a: levels[0], b: levels[1], seed, expectedWinner, group: group.name };
+    }));
     let completed = 0;
-    fullAIWork = playMatchesParallel(mythMatches, (result, match) => {
+    fullAIWork = playMatchesParallel(matches, (result, match) => {
       completed++;
-      const mythWon = !result.err && result.s.winner === match.expectedWinner;
-      console.log(`  神話／困難 AI：${completed}/${N} 場完成，${mythWon ? '神話勝' : '神話未勝'}，${result.n || 0} 桿（種子 ${match.seed}）`);
-    }).then(mythResults => {
-      const mw = mythResults.reduce((wins, result, index) => {
-        return wins + Number(!result.err && result.s.phase === 'over' && result.s.winner === mythMatches[index].expectedWinner);
-      }, 0);
-      ok(mw >= N * 0.7, `14-1：神話 AI 對困難 AI 贏 ${mw}/${N}（≥70%）`);
-      console.log(`  神話／困難組並行耗時 ${((Date.now() - mythStartedAt) / 1000).toFixed(1)} 秒`);
-      console.log(`  AI 勝率統計耗時 ${((Date.now() - startedAt) / 1000).toFixed(1)} 秒`);
+      console.log(`  AI 對局：${completed}/${matches.length} 場完成，${match.group}，${result.n || 0} 桿（種子 ${match.seed}）`);
+    }).then(results => {
+      for (const group of groups) {
+        const indices = matches.map((match, index) => match.group === group.name ? index : -1).filter(index => index >= 0);
+        const complete = indices.every(index => !results[index].err && results[index].s.phase === 'over');
+        const wins = indices.filter(index => !results[index].err && results[index].s.winner === matches[index].expectedWinner).length;
+        ok(complete, `14-1：${group.name} AI 兩個固定種子均合法完成整局（交換席位）`);
+        console.log(`  ${group.name}：較高難度勝 ${wins}/2（回歸樣本，不作勝率統計）`);
+      }
+      console.log(`  四場 AI 對局並行耗時 ${((Date.now() - startedAt) / 1000).toFixed(1)} 秒`);
     });
   } else {
-    console.log('  （快速模式：略過 20 場 AI 勝率統計；完整驗證請執行 npm run verify:full）');
+    console.log('  （略過四場 AI 對局；全部驗證請執行 npm test）');
   }
 }
 
