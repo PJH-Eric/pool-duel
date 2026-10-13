@@ -25,7 +25,7 @@ npm start
 
 ```
 npm test                # 快速完整檢查：物理、三種規則、袋口、AI 合法性與線上房間（約 1–2 分鐘）
-npm run verify:full     # 再加困難／簡單與神話／困難 AI 的 20 場勝率統計（約 10 分鐘）
+npm run verify:full     # 再加困難／簡單與神話／困難 AI 的 20 場勝率統計（本機約 15 分鐘，依設備而異）
 npm run test:online     # 只跑線上整合（真的開 WebSocket）
 ```
 

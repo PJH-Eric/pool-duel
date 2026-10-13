@@ -230,9 +230,17 @@ section('AI');
   if (full) {
     const startedAt = Date.now();
     const N = 10; let hw = 0;
-    for (let i = 1; i <= N; i++) { const r = play('score', 'hard', 'easy', i); if (r.s.winner === 0) hw++; }
+    for (let i = 1; i <= N; i++) {
+      const r = play('score', 'hard', 'easy', i); if (r.s.winner === 0) hw++;
+      console.log(`  困難／簡單 AI：${i}/${N} 場完成，本場 ${r.n} 桿`);
+    }
     ok(hw >= N * 0.7, `14-1：困難 AI 對簡單 AI 贏 ${hw}/${N}（≥70%）`);
-    let mw = 0; for (let i = 1; i <= N; i++) { const sw = i % 2, lv = sw ? ['hard', 'myth'] : ['myth', 'hard']; const r = play('score', lv[0], lv[1], i); if (r.s.winner === (sw ? 1 : 0)) mw++; }
+    let mw = 0;
+    for (let i = 1; i <= N; i++) {
+      const sw = i % 2, lv = sw ? ['hard', 'myth'] : ['myth', 'hard'];
+      const r = play('score', lv[0], lv[1], i); if (r.s.winner === (sw ? 1 : 0)) mw++;
+      console.log(`  神話／困難 AI：${i}/${N} 場完成，本場 ${r.n} 桿`);
+    }
     ok(mw >= N * 0.7, `14-1：神話 AI 對困難 AI 贏 ${mw}/${N}（≥70%）`);
     console.log(`  AI 勝率統計耗時 ${((Date.now() - startedAt) / 1000).toFixed(1)} 秒`);
   } else {
