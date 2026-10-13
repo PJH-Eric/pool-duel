@@ -180,7 +180,7 @@ button { font-family: inherit; }
 .pseat .pname span.n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pseat .tag { font-size: 10px; font-weight: 800; padding: 1px 7px; border-radius: 9px; background: var(--green); color: #eafff2; flex: none; }
 .pseat .pline { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11.5px; color: #cdb995; }
-.pseat .pscore { flex: none; margin-left: auto; color: var(--brass-l); font-size: 18px; font-weight: 900; }
+.pseat .pscore { direction: ltr; unicode-bidi: isolate; flex: none; margin-left: auto; color: var(--brass-l); font-size: 18px; font-weight: 900; }
 .potted-row { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; min-width: 0; border-top: 1px solid rgba(227,168,64,.16); padding-top: 2px; }
 .potted-label { flex: none; color: var(--muted); font-size: 10px; font-weight: 800; }
 .potted-history { display: flex; align-items: center; gap: 3px; min-width: 0; overflow-x: auto; white-space: nowrap; padding: 2px 2px 3px; }
