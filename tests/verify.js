@@ -6,6 +6,7 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 const D = path.join(__dirname, '..', 'public', 'js') + path.sep;
 const P = require(D + 'physics.js'), Rules = require(D + 'rules.js'), AI = require(D + 'ai.js'), RNG = require(D + 'rng.js'), C = require(D + 'physics-config.js');
+const Turn = require(D + 'turn-config.js'), Game = require(D + 'game.js').PoolGame;
 require('./game-status-check')();
 const full = process.argv.includes('--full') && !process.argv.includes('--quick');
 let pass = 0, fail = 0;
@@ -13,6 +14,25 @@ function section(t) { console.log('\n● ' + t); }
 function ok(c, m) { if (c) { pass++; console.log('  ✓ ' + m); } else { fail++; console.log('  ✗ ' + m); } }
 const setup = (kind, seed) => P.makeWorld([{ id: 0, x: 250, y: 250, pocket: -1 }].concat(P.rack(kind, RNG.create(seed))));
 const shotOf = (dx, dy, power) => Object.assign({}, P.quantizeDir(dx, dy), { power, sx: 0, sy: 0 });
+
+section('回合倒數與延長');
+{
+  const fake = Object.create(Game.prototype);
+  fake.cfg = { mode: 'ai' }; fake.state = { phase: 'play', turn: 0, rackNo: 1 };
+  fake.phase = 'aiming'; fake.mySeat = 0; fake.turnEnd = 0;
+  fake.extensionUsed = [false, false]; fake.extensionRackNo = 1; fake.extensionPending = false;
+  fake.ui = { choice() {}, extension() {}, timer() {}, toast() {} };
+  fake.refresh = () => {}; fake.defaultAim = () => {}; fake.sendAim = () => {};
+  const turnStart = performance.now();
+  fake.beginTurn(true);
+  const firstDeadline = fake.turnEnd;
+  ok(Turn.TURN_MS === 35000 && Math.abs(firstDeadline - turnStart - 35000) < 10, '單機每次回合開始時固定倒數 35 秒');
+  const accepted = fake.extendTime();
+  ok(Turn.EXTENSION_MS === 25000 && accepted && Math.abs(fake.turnEnd - firstDeadline - 25000) < 10, '延長一次精確增加 25 秒');
+  ok(fake.extensionUsed[0] && !fake.extendTime(), '同一位玩家同一盤只能延長一次');
+  fake.syncExtensionState({ rackNo: 2 });
+  ok(!fake.extensionUsed[0] && fake.extensionRackNo === 2, '新一盤重置雙方延長次數');
+}
 
 section('物理');
 {

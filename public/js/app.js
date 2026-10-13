@@ -290,7 +290,7 @@
     $('#gChatBox').classList.remove('hidden');
     $('#gPanel').classList.remove('hidden'); $('#gDrawer').classList.remove('hidden');
     const me = room.youSeat;
-    g.start({ mode: 'online', kind: gameMsg.kind, mySeat: me, state: gameMsg.state, seats: gameMsg.seats.map(s => ({ name: s.name })), cues: gameMsg.seats.map(s => s.cue), aimMode: gameMsg.cfg.aim, net: root.Net, turnMs: gameMsg.turnMs, bigPockets: gameMsg.cfg.pockets === 'big' });
+    g.start({ mode: 'online', kind: gameMsg.kind, mySeat: me, state: gameMsg.state, seats: gameMsg.seats.map(s => ({ name: s.name })), cues: gameMsg.seats.map(s => s.cue), aimMode: gameMsg.cfg.aim, net: root.Net, turnMs: gameMsg.turnMs, extensionUsed: gameMsg.extensionUsed, bigPockets: gameMsg.cfg.pockets === 'big' });
     $('#gSpec').classList.toggle('hidden', me >= 0);
     $('#gSpec').textContent = '你是觀戰者：可以看全桌、可以聊天';
     applySettings(); resetDrawer(); unread = 0; updateUnread();
@@ -340,6 +340,15 @@
       if (sec == null) { el.textContent = '--'; el.classList.remove('low'); return; }
       el.textContent = sec; el.classList.toggle('low', !!mine && sec <= 5);
     },
+    extension(vm) {
+      const button = $('#btnExtend');
+      button.disabled = !vm.enabled;
+      button.textContent = vm.pending ? '…' : (vm.used ? '已用' : '+25');
+      button.classList.toggle('spent', vm.used);
+      const label = vm.used ? '本盤延長機會已用完' : '延長回合 25 秒；每位玩家每盤一次';
+      button.setAttribute('aria-label', label);
+      button.title = label;
+    },
     result(vm) { showResult(vm); },
     choice(vm) { showChoice(vm); }
   };
@@ -382,6 +391,7 @@
   powerSlider.render = bindSlider($('#powerSlider'), { min: 0, max: 1, step: 0.01, get: () => (App.game ? App.game.power : 0.5), set: v => App.game && App.game.setPower(Math.max(0.02, v)), aria: 100 });
   fineSlider.render = bindSlider($('#fineSlider'), { min: -4, max: 4, step: 0.05, snap: 0, snapR: 0.08, get: () => (App.game ? App.game.fine : 0), set: v => App.game && App.game.setFine(v) });
   $('#btnShoot').onclick = () => { if (App.game) App.game.shoot(); };
+  $('#btnExtend').onclick = () => { if (App.game) App.game.extendTime(); };
   $('#btnSafety').onclick = () => { if (App.game) App.game.toggleSafety(); };
   $('#btnRack').onclick = () => { if (App.game) App.game.resetPractice(); };
 

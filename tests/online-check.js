@@ -55,7 +55,11 @@ function client(port, name, cid) {
   await A.wait('welcome'); await B.wait('welcome');
   A.send({ type: 'create', name: '測試房', kind: 'eight', turnSec: 30, pockets: 'big' });
   const joined = await A.wait('joined');
-  ok(joined && joined.role === 'player' && joined.room.cfg.kind === 'eight' && joined.room.cfg.pockets === 'big', '房主開房（八號球、加大袋口）');
+  ok(joined && joined.role === 'player' && joined.room.cfg.kind === 'eight' && joined.room.cfg.pockets === 'big' && joined.room.cfg.turnSec === 35, '房主開房（固定 35 秒、八號球、加大袋口）');
+  const cfgFrom = A.msgs.length;
+  A.send({ type: 'config', turnSec: 60 });
+  const fixedCfg = await A.wait('room', 2000, cfgFrom);
+  ok(fixedCfg && fixedCfg.room.cfg.turnSec === 35, '房間不能把回合時間改成其他值');
   B.send({ type: 'join', roomId: joined.roomId });
   await B.wait('joined');
   ok(B.room.members.length === 2 && B.room.members.find(m => m.name === '小華').seat === 1, '第二人坐 P2');
@@ -64,6 +68,7 @@ function client(port, name, cid) {
   A.send({ type: 'start' });
   const g = await B.wait('game');
   ok(g && g.game.state.kind === 'eight' && g.game.state.balls.length === 16 && g.game.state.bigPockets, '開局：球擺好、加大袋口');
+  ok(g && g.game.turnMs >= 34500 && g.game.turnMs <= 35000 && g.game.extensionUsed.every(x => !x), '線上開局倒數 35 秒且每盤延長次數重置');
 
   console.log('● 觀戰與邀請');
   A.send({ type: 'invite' });
@@ -84,12 +89,35 @@ function client(port, name, cid) {
   await sleep(150);
   ok(S.room && S.room.chat.some(c => c.text === '大家好'), '聊天觀戰者看得到');
 
+  console.log('● 每盤延長一次與權限');
+  const active = g.game.state.turn === 0 ? A : B;
+  const passive = active === A ? B : A;
+  let extensionFrom = passive.msgs.length;
+  passive.send({ type: 'extend' });
+  const wrongTurn = await passive.wait('error', 2000, extensionFrom);
+  ok(wrongTurn && wrongTurn.code === 'extension', '非目前回合玩家不能延長');
+  extensionFrom = S.msgs.length;
+  S.send({ type: 'extend' });
+  const spectatorError = await S.wait('error', 2000, extensionFrom);
+  ok(spectatorError && spectatorError.code === 'extension', '觀戰者不能延長');
+  const extFrom = { A: A.msgs.length, B: B.msgs.length, S: S.msgs.length };
+  active.send({ type: 'extend' });
+  const extended = await active.wait('extension', 2000, extFrom[active === A ? 'A' : 'B']);
+  const observedExtension = await S.wait('extension', 2000, extFrom.S);
+  ok(extended && extended.extensionUsed[active === A ? 0 : 1] && extended.turnMs >= 58500 && extended.turnMs <= 60000, '輪到的玩家延長成功，剩餘時間增加 25 秒');
+  ok(observedExtension && observedExtension.extensionUsed.some(Boolean), '延長結果同步給對手與觀戰者');
+  extensionFrom = active.msgs.length;
+  active.send({ type: 'extend' });
+  const repeated = await active.wait('error', 2000, extensionFrom);
+  ok(repeated && repeated.code === 'extension', '本盤已延長後再次操作會被拒絕');
+
   console.log('● 伺服器權威出桿');
   let st = A.state;
   const seatOf = st.turn;
   const shooter = seatOf === 0 ? A : B, other = seatOf === 0 ? B : A;
+  const wrongShotFrom = other.msgs.length;
   other.send({ type: 'shot', shot: { ax: 1000000, ay: 0, power: 500 } });
-  const er = await other.wait('error');
+  const er = await other.wait('error', 3000, wrongShotFrom);
   ok(er && /還沒輪到/.test(er.text), '還沒輪到的人出桿被拒');
   const rng = RNG.create('t');
   const pick = AI.chooseShot(st, 'normal', rng);
@@ -136,7 +164,7 @@ function client(port, name, cid) {
   B.send({ type: 'rematch' });
   const g2 = await A.wait('game', 3000, A.msgs.length);
   await sleep(100);
-  ok(A.state.phase === 'play' && A.state.breaker !== firstBreaker && A.state.shotNo === 0, '雙方同意：新局開始，開球權互換');
+  ok(A.state.phase === 'play' && A.state.breaker !== firstBreaker && A.state.shotNo === 0 && g2 && g2.game.extensionUsed.every(x => !x), '雙方同意：新局開始、開球權互換並重置延長');
 
   console.log('● 斷線 30 秒保留與重連');
   const bId = B.room.members.find(m => m.name === '小華').id;

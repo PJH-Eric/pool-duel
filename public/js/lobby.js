@@ -9,7 +9,7 @@
   const QUICK = ['加油！', '好球！', '好險！', '哈哈', '再一局', '謝謝', '掰掰'];
   const L = {
     room: null, rooms: [], pendingInvite: null, awaitJoin: 0, wasInRoom: false, lastChatAt: 0, dcEnd: 0, dcTimer: 0,
-    create: { kind: 'nine', turnSec: 45, aim: 'full', pockets: 'standard' },
+    create: { kind: 'nine', aim: 'full', pockets: 'standard' },
     inGame: false
   };
   root.PoolLobby = L;
@@ -79,7 +79,10 @@
   Net.on('rooms', m => { L.rooms = m.rooms; renderRooms(); });
   Net.on('error', m => {
     if (m.code === 'invite') showInviteError(m.text);
-    else app().toast(m.text || '發生錯誤');
+    else {
+      if (m.code === 'extension' && app().game && app().game.cfg && app().game.cfg.mode === 'online') app().game.extensionRejected();
+      app().toast(m.text || '發生錯誤');
+    }
   });
   Net.on('notice', m => app().toast(m.text));
   Net.on('joined', m => {
@@ -113,7 +116,7 @@
     app().startOnlineGame(m.game, L.room);
     L.inGame = true;
   });
-  ['shot', 'settle', 'state', 'aim'].forEach(t => Net.on(t, m => { const g = app().game; if (g && g.cfg && g.cfg.mode === 'online') g.onNet(m); if (t === 'state' || t === 'settle') { const rm = L.room; if (rm && m.phase) rm.phase = m.phase; } }));
+  ['shot', 'settle', 'state', 'aim', 'extension'].forEach(t => Net.on(t, m => { const g = app().game; if (g && g.cfg && g.cfg.mode === 'online') g.onNet(m); if (t === 'state' || t === 'settle') { const rm = L.room; if (rm && m.phase) rm.phase = m.phase; } }));
   Net.on('lobby-return', () => { $('#resultOverlay').classList.add('hidden'); if (app().game) app().game.stop(); if (L.room) { app().show('room'); renderRoom(); } });
   Net.on('closed', m => { app().toast(m.why || '房間已結束'); roomLost(m.why || '房間已結束'); });
   Net.on('kicked', () => roomLost('你被房主請出房間了'));
@@ -139,11 +142,10 @@
   }
   const OPT = {
     kind: [['nine', '九球'], ['eight', '八號球'], ['score', '14-1']],
-    turnSec: [[30, '30 秒'], [45, '45 秒'], [60, '60 秒'], [0, '不限']],
     aim: [['full', '完整'], ['short', '簡短'], ['off', '關閉']],
     pockets: [['standard', '標準'], ['big', '加大']]
   };
-  const LABEL = { kind: '玩法', turnSec: '回合時間', aim: '瞄準輔助', pockets: '袋口' };
+  const LABEL = { kind: '玩法', aim: '瞄準輔助', pockets: '袋口' };
   function buildCreateForm() {
     const f = $('#createForm'); f.innerHTML = '';
     Object.keys(OPT).forEach(k => {
@@ -151,6 +153,7 @@
       seg(sg, OPT[k], L.create[k], v => { L.create[k] = v; buildCreateForm(); });
       f.appendChild(lb); f.appendChild(sg);
     });
+    addFixedTurnRow(f, 'form-grid');
   }
   function renderRooms() {
     const box = $('#roomList');
@@ -188,6 +191,7 @@
       else { const v = (OPT[k].find(o => String(o[0]) === String(r.cfg[k])) || [0, ''])[1]; const sp = document.createElement('span'); sp.className = 'cfg-val'; sp.textContent = v; row.appendChild(sp); }
       cfg.appendChild(row);
     });
+    addFixedTurnRow(cfg, 'cfg-row');
     renderInvite();
     const me = myMember();
     $('#btnTakeSeat').classList.toggle('hidden', !r.canTakeSeat);
@@ -201,6 +205,12 @@
     else hint = r.canStart ? '兩個人都準備好了，可以開始！' : '等兩個人都按「準備好」，房主才能開始。';
     $('#roomHint').textContent = hint;
     $('#roomDc').classList.toggle('hidden', !r.dc);
+  }
+  function addFixedTurnRow(container, className) {
+    const row = document.createElement('div'); row.className = className + ' fixed-turn-row';
+    const label = document.createElement('span'); label.className = 'lbl'; label.textContent = '回合時間';
+    const value = document.createElement('span'); value.className = 'cfg-val'; value.textContent = '35 秒・每位玩家每盤可延長一次（+25 秒）';
+    row.appendChild(label); row.appendChild(value); container.appendChild(row);
   }
   function inviteUrl(token) {
     let u = location.origin + location.pathname + '?invite=' + encodeURIComponent(token);

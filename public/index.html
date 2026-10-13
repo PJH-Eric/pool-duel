@@ -110,7 +110,7 @@
     </header>
     <div class="g-scoreboard" role="group" aria-label="對局比分與球況">
       <div id="gSeats" class="seat-list" role="group" aria-label="玩家進袋紀錄"></div>
-      <div class="g-score-center"><div class="timer" id="gTimerWrap"><span class="lbl">倒數</span><span id="gTimer" class="timer-dot">--</span></div></div>
+      <div class="g-score-center"><div class="timer" id="gTimerWrap"><span class="lbl">倒數</span><span id="gTimer" class="timer-dot">--</span></div><button id="btnExtend" class="btn small gold extend-time" type="button" aria-label="延長回合 25 秒；每位玩家每盤一次" title="延長 25 秒，每位玩家每盤一次" disabled>+25</button></div>
       <div class="g-score-meta"><div id="gStatus" class="g-status" role="status" aria-live="polite">準備中…</div><div id="gSpec" class="spec-note hidden"></div></div>
     </div>
     <div class="g-main">
@@ -176,6 +176,7 @@
 </div>
 
 <script src="js/config.js"></script>
+<script src="js/turn-config.js"></script>
 <script src="js/rng.js"></script>
 <script src="js/themes/nicknames.js"></script>
 <script src="js/themes/tables.js"></script>

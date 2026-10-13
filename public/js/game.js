@@ -2,7 +2,7 @@
    單機電腦流程、線上同步（收到 shot 就用同一份引擎本地播放，收到 settle 以伺服器為準）。 */
 (function (root) {
   'use strict';
-  const C = root.PoolConfig, P = root.PoolPhysics, Rules = root.PoolRules, AI = root.PoolAI, RNG = root.RNG, Render = root.PoolRender, Sound = root.Sound;
+  const C = root.PoolConfig, P = root.PoolPhysics, Rules = root.PoolRules, AI = root.PoolAI, RNG = root.RNG, Render = root.PoolRender, Sound = root.Sound, Turn = root.PoolTurn || (typeof require === 'function' ? require('./turn-config.js') : null);
   const REASON = {
     nine: '9 號球合法進袋', eight: '8 號球打進指定袋口', score: '先拿到目標分數', draw: '平手',
     disconnect: '對手斷線逾時', forfeit: '對手離開了'
@@ -24,6 +24,7 @@
       this.dropping = []; this.queue = []; this.pendingSettle = null; this.provisional = false;
       this.remoteAim = null; this.curShot = null; this.anim = null; this.aiAnim = null;
       this.lastAimSent = 0; this.turnEnd = 0; this.lastSec = -1; this.awaitEcho = false;
+      this.extensionUsed = [false, false]; this.extensionRackNo = 0; this.extensionPending = false;
       this.stats = null; this.timers = [];
       this._onResize = () => { this.r.resize(); };
       root.addEventListener('resize', this._onResize);
@@ -49,6 +50,9 @@
         if (this.cfg.mode === 'ai' && this.cfg.breaker != null) { this.state.breaker = this.cfg.breaker; this.state.turn = this.cfg.breaker; this.state.hand.player = this.cfg.breaker; }
       }
       this.r.setPocketScale(this.state.bigPockets ? C.POCKET_SCALE_BIG : 1);
+      this.extensionRackNo = this.state.rackNo;
+      this.extensionUsed = Array.isArray(this.cfg.extensionUsed) ? this.cfg.extensionUsed.slice(0, 2).map(Boolean) : [false, false];
+      this.extensionPending = false;
       this.turnEnd = this.cfg.turnMs ? performance.now() + this.cfg.turnMs : 0;
       if (!this.running) { this.running = true; this.last = performance.now(); this.raf = requestAnimationFrame(t => this.frame(t)); }
       this.ui.result && this.ui.result(null); this.ui.choice && this.ui.choice(null);
@@ -71,7 +75,11 @@
     beginTurn(initial) {
       this.statusRevision++;
       const s = this.state; this.call = -1; this.callBall = -1; this.safety = false; this.hand = null; this.remoteAim = null;
-      if (s.phase === 'over') { this.phase = 'over'; this.refresh(); this.showResult(); return; }
+      this.extensionPending = false;
+      if (!this.isOnline) this.turnEnd = s.phase === 'over' ? 0 : performance.now() + (s.phase === 'choice' ? Turn.CHOICE_MS : Turn.TURN_MS);
+      this.lastSec = -1;
+      this.syncExtensionState(s);
+      if (s.phase === 'over') { this.phase = 'over'; this.ui.timer && this.ui.timer(null); this.refresh(); this.showResult(); return; }
       if (s.phase === 'choice') { this.phase = 'choice'; this.refresh(); this.handleChoice(); return; }
       this.ui.choice && this.ui.choice(null);
       const handOwner = s.hand ? s.hand.player : -1;
@@ -153,7 +161,52 @@
       } else hint = this.ruleLine(s);
       if (s.last && s.last.fouls && s.last.fouls.length && s.phase !== 'over') hint = '上一桿：' + this.seatName(s.last.player) + ' 犯規（' + s.last.fouls.map(f => Rules.FOUL_TEXT[f]).join('、') + '）' + (s.hand && s.hand.player === this.mySeat ? '，你可以自由放置母球' : '');
       this.ui.hud && this.ui.hud({ kind, kindName: Rules.KIND_NAME[kind], seats, turn: s.turn, status, statusRevision: this.statusRevision, hint, phase: this.phase, over: s.phase === 'over', mode: this.cfg.mode, practice: this.cfg.mode === 'practice', potted: this.cfg.mode === 'practice' ? this.practiceCount || 0 : null });
+      this.updateExtensionButton();
       this.pushControls();
+    }
+    syncExtensionState(state, used) {
+      if (!state) return;
+      if (this.extensionRackNo !== state.rackNo) {
+        this.extensionRackNo = state.rackNo;
+        this.extensionUsed = [false, false];
+      }
+      if (Array.isArray(used) && this.extensionRackNo === state.rackNo) this.extensionUsed = [!!used[0], !!used[1]];
+    }
+    updateExtensionButton() {
+      if (!this.ui.extension) return;
+      const seat = this.state && this.state.phase === 'play' ? this.state.turn : -1;
+      const remaining = this.turnEnd ? this.turnEnd - performance.now() : 0;
+      const canAct = this.phase === 'aiming' && seat === this.mySeat && this.mySeat >= 0;
+      this.ui.extension({
+        enabled: canAct && remaining > 0 && !this.extensionPending && !this.extensionUsed[seat],
+        used: seat >= 0 && !!this.extensionUsed[seat], pending: this.extensionPending,
+        available: seat >= 0 && !this.extensionUsed[seat]
+      });
+    }
+    extendTime() {
+      if (!this.state || this.state.phase !== 'play' || this.phase !== 'aiming' || !this.isMyTurn || this.extensionPending || this.extensionUsed[this.mySeat] || !this.turnEnd || this.turnEnd <= performance.now()) return false;
+      if (this.isOnline) {
+        this.extensionPending = true;
+        this.updateExtensionButton();
+        if (!this.cfg.net.send({ type: 'extend' })) {
+          this.extensionPending = false;
+          this.updateExtensionButton();
+          this.ui.toast && this.ui.toast('連線中斷，延長沒有送出', 'foul');
+          return false;
+        }
+        return true;
+      }
+      this.turnEnd += Turn.EXTENSION_MS;
+      this.extensionUsed[this.mySeat] = true;
+      this.lastSec = -1;
+      this.ui.timer && this.ui.timer(Math.ceil((this.turnEnd - performance.now()) / 1000), true);
+      this.updateExtensionButton();
+      this.ui.toast && this.ui.toast('回合延長 25 秒');
+      return true;
+    }
+    extensionRejected() {
+      this.extensionPending = false;
+      this.updateExtensionButton();
     }
     targetText(s, seat, withDot) {
       let t = '';
@@ -374,11 +427,29 @@
       // 進袋動畫
       if (this.dropping.length) this.dropping = this.dropping.filter(d => now - d.t0 < 320);
       // 倒數
-      if (this.turnEnd && (this.phase === 'aiming' || this.phase === 'waiting' || this.phase === 'choice')) {
+      if (this.turnEnd && (this.phase === 'aiming' || this.phase === 'waiting' || this.phase === 'thinking' || this.phase === 'choice')) {
         const sec = Math.max(0, Math.ceil((this.turnEnd - now) / 1000));
-        if (sec !== this.lastSec) { this.lastSec = sec; this.ui.timer && this.ui.timer(sec, this.isMyTurn || (this.phase === 'choice' && this.state.pending && this.state.pending.player === this.mySeat)); if (sec <= 5 && sec > 0 && this.isMyTurn) Sound.sfx.tick(); }
-      } else if (this.lastSec !== -1 && !this.turnEnd) { this.lastSec = -1; this.ui.timer && this.ui.timer(null); }
+        if (sec !== this.lastSec) { this.lastSec = sec; this.ui.timer && this.ui.timer(sec, this.isMyTurn || (this.phase === 'choice' && this.state.pending && this.state.pending.player === this.mySeat)); this.updateExtensionButton(); if (sec <= 5 && sec > 0 && this.isMyTurn) Sound.sfx.tick(); }
+        if (sec === 0 && !this.isOnline) { this.applyLocalTimeout(); return; }
+      } else if (this.lastSec !== -1 && !this.turnEnd) { this.lastSec = -1; this.ui.timer && this.ui.timer(null); this.updateExtensionButton(); }
       if (this.remoteAim && now - this.remoteAim.t > 4000) this.remoteAim = null;
+    }
+    applyLocalTimeout() {
+      if (this.cfg.mode === 'practice' && this.state.phase === 'play') {
+        this.turnEnd = performance.now() + Turn.TURN_MS;
+        this.lastSec = -1;
+        this.ui.toast && this.ui.toast('時間到，練習回合重新計時');
+        this.updateExtensionButton();
+        return;
+      }
+      const before = this.state;
+      const info = Rules.timeoutFoul(before);
+      this.state = info.state;
+      this.syncExtensionState(this.state);
+      Sound.sfx.foul();
+      this.beginTurn();
+      if (before.phase === 'choice') this.ui.toast && this.ui.toast('選擇時間到，已自動完成選擇');
+      else this.ui.toast && this.ui.toast(this.seatName(info.player) + ' 回合超時，換對手出桿並取得自由球', 'foul');
     }
     drainEvents(now) {
       const w = this.world, ev = w.events;
@@ -468,6 +539,7 @@
         if (ps && ps.shotNo === before.shotNo + 1) {
           if (ps.hash && ps.hash !== res.hash) console.warn('[sync] 本地結果與伺服器不同，改用伺服器：', ps.hash, res.hash);
           finalState = ps.state; info = Object.assign({}, info, ps.info || {}); this.pendingSettle = null;
+          this.syncExtensionState(finalState, ps.extensionUsed);
           if (ps.turnMs != null) this.turnEnd = ps.turnMs ? performance.now() + ps.turnMs : 0;
         } else provisional = true;
       }
@@ -486,6 +558,7 @@
         st.best = Math.max(st.best, st.run);
       }
       this.state = after;
+      this.syncExtensionState(after);
       // 提示
       const name = this.seatName(seat);
       const parts = [];
@@ -510,7 +583,7 @@
       else s.hand = null;
       if (Rules.onTable(s).length === 0) {
         const n = Rules.newGame(s.kind, { kids: true, bigPockets: s.bigPockets }, this.rng); n.shotNo = s.shotNo;
-        info.state = n; this.ui.toast && this.ui.toast('清檯了！重新擺球');
+        info.state = n; this.extensionUsed = [false, false]; this.extensionRackNo = n.rackNo; this.ui.toast && this.ui.toast('清檯了！重新擺球');
       }
       return info;
     }
@@ -562,6 +635,7 @@
       const r = Rules.resolveChoice(s, c, this.rng);
       if (r.error) return;
       this.state = r.state;
+      this.syncExtensionState(this.state);
       this.r.resetRolls();
       this.beginTurn();
       this.ui.toast && this.ui.toast(c === 'rerack' ? '重擺重開' : (c === 'respot' ? '8 號球放回置球點' : '接受現況'));
@@ -593,6 +667,7 @@
       this._recorded = false;
       this.stats = [0, 1].map(() => ({ shots: 0, potted: 0, pottedBalls: [], fouls: 0, run: 0, best: 0 }));
       this.state = Rules.nextGame(this.state, this.rng);
+      this.extensionUsed = [false, false]; this.extensionRackNo = this.state.rackNo;
       if (this.cfg.mode === 'ai') { /* 開球權互換：玩家第二局由電腦開球 */ }
       this.r.resetRolls(); this.ui.result && this.ui.result(null);
       this.beginTurn(true);
@@ -600,6 +675,7 @@
     resetPractice() {
       this.practiceCount = 0;
       this.state = Rules.newGame(this.state.kind, { kids: true, bigPockets: this.state.bigPockets }, this.rng);
+      this.extensionUsed = [false, false]; this.extensionRackNo = this.state.rackNo;
       this.r.resetRolls(); this.beginTurn(true);
     }
 
@@ -607,6 +683,16 @@
     busy() { return this.phase === 'strike' || this.phase === 'roll' || this.phase === 'settle'; }
     onNet(m) {
       if (!this.isOnline) return;
+      if (m.type === 'extension') {
+        if (m.rackNo === this.state.rackNo) {
+          this.syncExtensionState(this.state, m.extensionUsed);
+          if (m.shotNo === this.state.shotNo && this.state.phase === 'play' && m.turnMs != null) this.turnEnd = m.turnMs ? performance.now() + m.turnMs : 0;
+          this.extensionPending = false;
+          this.lastSec = -1;
+          this.refresh();
+        }
+        return;
+      }
       if (m.type === 'aim') {
         if (this.phase === 'waiting' && m.seat === this.state.turn) this.remoteAim = { dx: m.x, dy: m.y, p: m.p, cue: m.cue, t: performance.now() };
         return;
@@ -622,11 +708,12 @@
         if (this.provisional && m.shotNo === this.provisionalShotNo) {
           const same = JSON.stringify(m.state) === JSON.stringify(this.state);
           this.provisional = false;
-          if (!same) { const turnChanged = m.state.turn !== this.state.turn || m.state.phase !== this.state.phase; this.state = m.state; if (turnChanged) this.beginTurn(); else this.refresh(); }
+          if (!same) { const turnChanged = m.state.turn !== this.state.turn || m.state.phase !== this.state.phase; this.state = m.state; this.syncExtensionState(m.state, m.extensionUsed); if (turnChanged) this.beginTurn(); else this.refresh(); }
+          else this.syncExtensionState(this.state, m.extensionUsed);
           if (m.turnMs != null) this.turnEnd = m.turnMs ? performance.now() + m.turnMs : 0;
           return;
         }
-        if (m.shotNo > this.state.shotNo) { this.state = m.state; this.beginTurn(); }
+        if (m.shotNo > this.state.shotNo) { this.state = m.state; this.syncExtensionState(m.state, m.extensionUsed); this.beginTurn(); }
         return;
       }
       if (m.type === 'state') {
@@ -639,6 +726,7 @@
       const before = this.state;
       let notice = null, noticeKind = 'message';
       this.state = m.state; this.provisional = false;
+      this.syncExtensionState(m.state, m.extensionUsed);
       if (m.turnMs != null) this.turnEnd = m.turnMs ? performance.now() + m.turnMs : 0;
       if (m.info && m.info.fouls && m.info.fouls.includes('timeout')) { Sound.sfx.foul(); notice = this.seatName(m.info.player) + ' 回合超時，換對手出桿，並取得自由球'; noticeKind = 'foul'; }
       if (m.choice) {
@@ -659,6 +747,8 @@
       if (game.cfg) { this.cfg.aimMode = game.cfg.aim; }
       this.cfg.seats = game.seats.map(s => ({ name: s.name })); this.cfg.cues = game.seats.map(s => s.cue);
       this.state = game.state;
+      this.syncExtensionState(game.state, game.extensionUsed);
+      this.extensionPending = false;
       this.turnEnd = game.turnMs ? performance.now() + game.turnMs : 0;
       this.r.resetRolls();
       this.beginTurn(true);
