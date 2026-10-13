@@ -43,6 +43,9 @@ jobs:
           GAME_SERVER_URL: ${{ inputs.game_server_url || vars.GAME_SERVER_URL || env.DEFAULT_GAME_SERVER_URL }}
         run: node scripts/inject-server-url.js
 
+      - name: 寫入部署版本
+        run: node -e "require('fs').writeFileSync('public/version.json', JSON.stringify({commit:process.env.GITHUB_SHA}))"
+
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -57,3 +60,11 @@ jobs:
     steps:
       - id: deploy
         uses: actions/deploy-pages@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: 確認線上版本
+        env:
+          SITE_URL: ${{ steps.deploy.outputs.page_url }}
+        run: node scripts/check-deployment.js "$SITE_URL" "$GITHUB_SHA"

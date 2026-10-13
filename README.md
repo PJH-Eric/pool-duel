@@ -29,6 +29,10 @@ npm run verify:full     # 再加困難／簡單與神話／困難 AI 的 20 場�
 npm run test:online     # 只跑線上整合（真的開 WebSocket）
 ```
 
+`npm test`／`npm run verify` 同時執行物理／規則／AI 與線上整合，所有既有案例都保留；任一組失敗就回報失敗，並顯示各組與總耗時。線上測試仍使用真實倒數與重連等待時間。
+
+Pages 部署後會自動讀取線上的 `version.json`，比對本次 commit SHA；最多重試 12 次，版本不符會讓工作流程失敗。也可手動執行 `node scripts/check-deployment.js <網站網址> <完整 commit SHA>` 確認版本。
+
 ## 架構重點
 
 - **物理**：固定步長 1/240 秒、只用 + − × ÷ √，同樣輸入一定得到同樣結果；擊球方向量化、力道 0～1000。

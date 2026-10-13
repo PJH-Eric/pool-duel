@@ -5,10 +5,10 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node tests/verify.js",
+    "test": "node scripts/verify-parallel.js",
     "test:pockets": "node tests/pocket-check.js",
-    "verify": "node tests/verify.js",
-    "verify:full": "node tests/verify.js --full",
+    "verify": "node scripts/verify-parallel.js",
+    "verify:full": "node scripts/verify-parallel.js --full",
     "test:online": "node tests/online-check.js",
     "inject": "node scripts/inject-server-url.js"
   },
