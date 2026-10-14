@@ -163,6 +163,7 @@
     var balls = clone(s.balls);
     if (s.hand && shot.cue) { var c = balls[0]; c.x = shot.cue.x; c.y = shot.cue.y; c.pocket = -1; }
     var w = P.makeWorld(balls.map(function (b) { return { id: b.id, x: b.x, y: b.y, pocket: b.pocket }; }), { pocketScale: s.bigPockets ? C.POCKET_SCALE_BIG : 1 });
+    if (s.isBreak) w.speedBoost = C.BREAK_BOOST;
     return w;
   }
 

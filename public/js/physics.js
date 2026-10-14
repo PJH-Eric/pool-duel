@@ -352,7 +352,7 @@
     var rx = -dy, ry = dx;
     dx -= rx * sx * C.SQUIRT; dy -= ry * sx * C.SQUIRT;
     l = Math.sqrt(dx * dx + dy * dy); dx /= l; dy /= l;
-    var v = powerToSpeed(shot.power);
+    var v = powerToSpeed(shot.power) * (w.speedBoost || 1);
     resetCtx(w);
     cue.air = 0; cue.air0 = 0;
     if (shot.jump) {                                // 跳桿：不帶旋轉，飛行時間 = 距離 / 速度
