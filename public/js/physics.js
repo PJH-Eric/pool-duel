@@ -36,15 +36,16 @@
     for (var pi = 0; pi < POCKETS.length; pi++) {
       var p = POCKETS[pi];
       var fallSpeed = p.corner ? C.POCKET_FALL_SPEED : C.ZERO_V;
-      if (speed2 >= fallSpeed * fallSpeed) continue;
+      var resting = speed2 <= C.POCKET_REST_V * C.POCKET_REST_V;
+      if (speed2 >= fallSpeed * fallSpeed && !resting) continue;
       var dx = b.x - p.hx, dy = b.y - p.hy;
       var distance2 = dx * dx + dy * dy;
       // 球心深入袋內、球體大半失去檯面支撐後才滑落；袋緣與入口不吸球。
       var supportRadius = p.corner
         ? p.hr * w.pocketScale - R / 2
         : capRadius(p, w.pocketScale) + R * 0.08;
-      // 補償：球已幾乎停在袋緣、球心落在可見洞口內（過半在洞上）時，不可懸在洞緣，必須掉進去。
-      if (p.corner && speed2 <= C.POCKET_REST_V * C.POCKET_REST_V) supportRadius = p.hr * w.pocketScale + C.POCKET_REST_ASSIST;
+      // 補償：球已幾乎停在袋緣、球心落在可見洞口內（過半在洞上）時，不可懸在洞緣，必須掉進去（角袋、邊袋皆同）。
+      if (resting) supportRadius = p.hr * w.pocketScale + C.POCKET_REST_ASSIST;
       if (distance2 >= supportRadius * supportRadius || distance2 < 1e-9) continue;
       var distance = Math.sqrt(distance2);
       b.vx = -dx / distance * C.POCKET_FALL_SPEED;
