@@ -163,8 +163,13 @@
     var balls = clone(s.balls);
     if (s.hand && shot.cue) { var c = balls[0]; c.x = shot.cue.x; c.y = shot.cue.y; c.pocket = -1; }
     var w = P.makeWorld(balls.map(function (b) { return { id: b.id, x: b.x, y: b.y, pocket: b.pocket }; }), { pocketScale: s.bigPockets ? C.POCKET_SCALE_BIG : 1 });
-    if (s.isBreak) w.speedBoost = C.BREAK_BOOST;
+    if (s.isBreak) w.breakBoost = true;
     return w;
+  }
+  // 開球隨機加成：出桿方產生一次，放進 shot.boost 隨封包同步，各端重播結果一致
+  function addBreakBoost(s, shot, rnd) {
+    if (s.isBreak) shot.boost = Math.round((C.BREAK_BOOST_MIN + (C.BREAK_BOOST_MAX - C.BREAK_BOOST_MIN) * rnd()) * 1000) / 1000;
+    return shot;
   }
 
   // ---------- 判定一桿 ----------
@@ -377,7 +382,7 @@
   return {
     FOUL_TEXT: FOUL_TEXT, KIND_NAME: KIND_NAME, groupOf: groupOf, newGame: newGame, nextGame: nextGame,
     legalFirstIds: legalFirstIds, needCall: needCall, needCallBall: needCallBall, validCuePlacement: validCuePlacement, nearestValidCue: nearestValidCue,
-    validateShot: validateShot, prepareWorld: prepareWorld, evaluateShot: evaluateShot, timeoutFoul: timeoutFoul,
+    validateShot: validateShot, prepareWorld: prepareWorld, addBreakBoost: addBreakBoost, evaluateShot: evaluateShot, timeoutFoul: timeoutFoul,
     resolveChoice: resolveChoice, defaultChoice: defaultChoice, forfeit: forfeit, onTable: onTable, ownLeft: ownLeft,
     getBall: getBall, describe: describe, clone: clone, findFreeSpot: findFreeSpot
   };

@@ -377,6 +377,7 @@
       if (this.hand) shot.cue = { x: Math.round(this.hand.x * 100) / 100, y: Math.round(this.hand.y * 100) / 100 };
       if (Rules.needCall(this.state)) shot.call = this.call;
       else if (Rules.needCallBall(this.state)) { if (this.safety) shot.safety = 1; else { shot.cb = this.callBall; shot.call = this.call; } }
+      Rules.addBreakBoost(this.state, shot, Math.random);
       return shot;
     }
     shoot() {
@@ -620,6 +621,7 @@
     }
     fireAI() {
       const pick = this.aiPick; this.aiAnim = null; if (!pick) return;
+      Rules.addBreakBoost(this.state, pick.shot, () => this.rng.next());
       this.playShot(pick.shot, this.state.turn);
     }
 

@@ -352,7 +352,8 @@
     var rx = -dy, ry = dx;
     dx -= rx * sx * C.SQUIRT; dy -= ry * sx * C.SQUIRT;
     l = Math.sqrt(dx * dx + dy * dy); dx /= l; dy /= l;
-    var v = powerToSpeed(shot.power) * (w.speedBoost || 1);
+    var v = powerToSpeed(shot.power);
+    if (w.breakBoost) { var bb = Number(shot.boost); if (!(bb >= C.BREAK_BOOST_MIN && bb <= C.BREAK_BOOST_MAX)) bb = (C.BREAK_BOOST_MIN + C.BREAK_BOOST_MAX) / 2; v *= bb; }
     resetCtx(w);
     cue.air = 0; cue.air0 = 0;
     if (shot.jump) {                                // 跳桿：不帶旋轉，飛行時間 = 距離 / 速度
