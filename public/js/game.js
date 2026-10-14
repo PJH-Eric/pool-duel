@@ -505,6 +505,7 @@
           }
         }
         if (this.hand) sc.hand = { x: this.hand.x, y: this.hand.y, ok: this.hand.ok };
+        if (s.kind === 'nine' && !s.isBreak) { const nid = Rules.legalFirstIds(s)[0], nb = nid && balls.find(b => b.id === nid); if (nb && nb.pocket < 0) sc.nextBall = { x: nb.x, y: nb.y }; }
         if (Rules.needCall(s)) sc.pocketCall = { selectable: true, selected: this.call, flash: this.flashT || 0 };
         else if (Rules.needCallBall(s) && !this.safety) {
           sc.pocketCall = { selectable: true, selected: this.call, flash: this.flashT || 0 };

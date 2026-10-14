@@ -465,6 +465,10 @@
       // 自由球虛框
       if (sc.hand) ring(sc.hand.x, sc.hand.y, R + 6, sc.hand.ok ? 'rgba(120,255,160,0.9)' : 'rgba(255,90,80,0.95)', 3);
       for (const b of bl) { if (b.pocket < 0 && b.id !== 0) drawBall(b); }
+      if (sc.nextBall) {                                // 下一顆目標球：輕微閃爍的光圈
+        const k = 0.5 + 0.5 * Math.sin(t * 5);
+        ring(sc.nextBall.x, sc.nextBall.y, R + 3 + 2 * k, 'rgba(255,236,150,' + (0.3 + 0.5 * k) + ')', 2.4);
+      }
       for (const b of bl) {
         if (b.pocket < 0 && b.id === 0) {
           let sc2 = 1, lift = 0;
