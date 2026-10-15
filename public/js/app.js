@@ -404,7 +404,10 @@
       hudLayoutFrame = 0;
       const game = App.game, screen = $('#screen-game');
       if (!game || !screen.classList.contains('active') || !game.r.state.s) return;
-      const layout = game.r.state, canvasRect = $('#gCanvas').getBoundingClientRect();
+      const canvasRect = $('#gCanvas').getBoundingClientRect();
+      // 提示換行或資訊欄尺寸改變時，同步繪圖與瞄準座標使用的球檯比例。
+      if (game.r.state.w !== Math.round(canvasRect.width) || game.r.state.h !== Math.round(canvasRect.height)) game.r.resize();
+      const layout = game.r.state;
       const tableWidth = ((layout.portrait ? C.H : C.W) + game.r.FR * 2) * layout.s;
       const tableCenter = canvasRect.left + layout.ox + tableWidth / 2;
       const screenRect = screen.getBoundingClientRect(), screenStyle = getComputedStyle(screen);
