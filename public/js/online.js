@@ -10,18 +10,19 @@
     get wsUrl() { return root.Config.serverUrl.replace(/^http/i, 'ws') + '/ws'; },
     on(type, fn) { (handlers[type] = handlers[type] || []).push(fn); },
     emit(type, a) { (handlers[type] || []).slice().forEach(f => { try { f(a); } catch (e) { console.error(e); } }); },
-    setStatus(s, text) { this.status = s; this.emit('status', { status: s, text: text || '' }); },
+    /* key／params 是字典 key；text 是目前語言的字串（給只要文字的人） */
+    setStatus(s, key, params) { this.status = s; this.emit('status', { status: s, key: key || '', params: params || null, text: key ? root.I18N.t(key, params) : '' }); },
     send(o) { if (this.ws && this.ws.readyState === 1) { this.ws.send(JSON.stringify(o)); return true; } return false; },
 
     connect(name) {
-      if (!this.enabled) { this.setStatus('disabled', '目前沒有設定伺服器，只能玩單機'); return; }
+      if (!this.enabled) { this.setStatus('disabled', 'net.disabled'); return; }
       if (name != null) this.name = name;
       this.wantOn = true;
       if (this.ws && (this.ws.readyState === 0 || this.ws.readyState === 1)) return;
       this.wake();
     },
     async wake() {
-      this.setStatus('waking', '連線中…（伺服器休眠時，第一次要等 30～60 秒）');
+      this.setStatus('waking', 'net.waking');
       const t0 = Date.now();
       while (this.wantOn) {
         try {
@@ -29,15 +30,15 @@
           const r = await fetch(root.Config.serverUrl + '/health', { signal: ctl.signal, cache: 'no-store' }); clearTimeout(to);
           if (r.ok) break;
         } catch (e) { /* 還沒醒 */ }
-        if (Date.now() - t0 > 100000) { this.setStatus('failed', '連不上伺服器。請確認網路，或稍後再試'); this.wantOn = false; return; }
+        if (Date.now() - t0 > 100000) { this.setStatus('failed', 'net.failed'); this.wantOn = false; return; }
         await new Promise(r => setTimeout(r, 2200));
-        this.setStatus('waking', '伺服器喚醒中…已等 ' + Math.round((Date.now() - t0) / 1000) + ' 秒');
+        this.setStatus('waking', 'net.wakingWait', { n: Math.round((Date.now() - t0) / 1000) });
       }
       if (!this.wantOn) return;
       this.open();
     },
     open() {
-      this.setStatus('connecting', '正在連線…');
+      this.setStatus('connecting', 'net.connecting');
       let ws;
       try { ws = new WebSocket(this.wsUrl); } catch (e) { this.scheduleRetry(); return; }
       this.ws = ws; this.welcomed = false;
@@ -59,7 +60,7 @@
     },
     scheduleRetry() {
       this.retry++;
-      this.setStatus('retrying', '連線中斷，重新連線中…（第 ' + this.retry + ' 次）');
+      this.setStatus('retrying', 'net.retrying', { n: this.retry });
       setTimeout(() => { if (this.wantOn && !this.ws) this.open(); }, Math.min(4000, 700 + this.retry * 600));
     },
     startTimers() {

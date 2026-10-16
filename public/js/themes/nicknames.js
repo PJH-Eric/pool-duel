@@ -13,6 +13,11 @@
   /** 用亂數函式（預設 Math.random）組一個暱稱 */
   function random(rand) {
     const r = rand || Math.random;
+    if (root.I18N && root.I18N.lang === 'en') {
+      const adj = ['Blue', 'Quick', 'Brave', 'Cozy', 'Round', 'Bright', 'Soft', 'Happy'];
+      const animal = ['Bear', 'Bunny', 'Chick', 'Kitty', 'Puppy', 'Penny', 'Frog', 'Panda'];
+      return adj[Math.floor(r() * adj.length)] + ' ' + animal[Math.floor(r() * animal.length)];
+    }
     return ADJ[Math.floor(r() * ADJ.length)] + ANIMAL[Math.floor(r() * ANIMAL.length)];
   }
 

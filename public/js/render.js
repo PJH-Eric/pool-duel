@@ -446,7 +446,7 @@
       const bl = sc.balls;
       if (sc.aim) {
         const A = sc.aim;
-        if (A.lines.jumpUnneeded) { const q = toScreen(A.lines.jump.to.x, A.lines.jump.to.y); g.save(); g.font = '800 ' + Math.max(12, 15 * state.s) + 'px "Noto Sans TC", system-ui, sans-serif'; g.textAlign = 'center'; g.fillStyle = 'rgba(255,214,102,0.95)'; g.strokeStyle = 'rgba(0,0,0,0.7)'; g.lineWidth = 3; g.strokeText('前面沒擋球，不用跳', q.x, q.y - R * state.s * 1.8); g.fillText('前面沒擋球，不用跳', q.x, q.y - R * state.s * 1.8); g.restore(); }
+        if (A.lines.jumpUnneeded) { const q = toScreen(A.lines.jump.to.x, A.lines.jump.to.y); g.save(); g.font = '800 ' + Math.max(12, 15 * state.s) + 'px "Noto Sans TC", system-ui, sans-serif'; g.textAlign = 'center'; g.fillStyle = 'rgba(255,214,102,0.95)'; g.strokeStyle = 'rgba(0,0,0,0.7)'; g.lineWidth = 3; const msg = root.I18N ? root.I18N.t('aim.noJump') : 'aim.noJump'; g.strokeText(msg, q.x, q.y - R * state.s * 1.8); g.fillText(msg, q.x, q.y - R * state.s * 1.8); g.restore(); }
         if (A.lines.jump) {                           // 跳桿：飛行段畫成拱形虛線，落點畫黃色圈
           const J = A.lines.jump, a = toScreen(J.from.x, J.from.y), b2 = toScreen(J.to.x, J.to.y);
           const mx = (a.x + b2.x) / 2, my = (a.y + b2.y) / 2 - Math.hypot(b2.x - a.x, b2.y - a.y) * 0.22;

@@ -9,11 +9,11 @@
       if (!el) { el = document.createElement('span'); el.setAttribute('role', 'status'); slot.appendChild(el); }
       if (state === 'off') { el.className = 'lat hidden'; return; }
       let cls = 'good', n = 4, txt = ms + 'ms';
-      if (ms == null) { cls = 'bad off'; n = 0; txt = '連線中'; }
+      if (ms == null) { cls = 'bad off'; n = 0; txt = root.I18N.t('lat.connecting'); }
       else if (ms > 250) { cls = 'bad'; n = 1; } else if (ms > 140) { cls = 'ok'; n = 2; } else if (ms > 70) { cls = 'good'; n = 3; }
       el.className = 'lat ' + cls;
-      el.setAttribute('aria-label', ms == null ? '網路連線中' : '網路延遲 ' + ms + ' 毫秒');
-      el.title = '與伺服器的來回延遲';
+      el.setAttribute('aria-label', ms == null ? root.I18N.t('lat.ariaConnecting') : root.I18N.t('lat.aria', { ms: ms }));
+      el.title = root.I18N.t('lat.title');
       el.innerHTML = '<span class="bars">' + bars(n) + '</span><span class="ms-text">' + txt + '</span>';
     });
   }

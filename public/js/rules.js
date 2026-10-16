@@ -136,24 +136,24 @@
 
   // ---------- 出桿驗證 ----------
   function validateShot(s, shot) {
-    if (s.phase !== 'play' || s.winner != null) return '現在不能出桿';
-    if (!shot || !isFinite(shot.ax) || !isFinite(shot.ay)) return '出桿資料不正確';
-    if (Math.abs(shot.ax) > 1000001 || Math.abs(shot.ay) > 1000001 || shot.ax !== Math.round(shot.ax) || shot.ay !== Math.round(shot.ay)) return '出桿資料不正確';
-    if (!(shot.power >= 0 && shot.power <= 1000)) return '力度不正確';
-    if (shot.power < 5) return '力度太小';
-    if (shot.jump != null && shot.jump !== 0 && shot.jump !== 1) return '出桿資料不正確';
+    if (s.phase !== 'play' || s.winner != null) return 'err.noShotNow';
+    if (!shot || !isFinite(shot.ax) || !isFinite(shot.ay)) return 'err.badShot';
+    if (Math.abs(shot.ax) > 1000001 || Math.abs(shot.ay) > 1000001 || shot.ax !== Math.round(shot.ax) || shot.ay !== Math.round(shot.ay)) return 'err.badShot';
+    if (!(shot.power >= 0 && shot.power <= 1000)) return 'err.badPower';
+    if (shot.power < 5) return 'err.weakPower';
+    if (shot.jump != null && shot.jump !== 0 && shot.jump !== 1) return 'err.badShot';
     var lim = C.SPIN_MAX * 1000 + 1;
-    if (Math.abs(shot.sx || 0) > lim || Math.abs(shot.sy || 0) > lim) return '擊球點不正確';
+    if (Math.abs(shot.sx || 0) > lim || Math.abs(shot.sy || 0) > lim) return 'err.badSpin';
     if (s.hand) {
-      if (!shot.cue || !validCuePlacement(s, shot.cue.x, shot.cue.y)) return '母球位置不合法';
+      if (!shot.cue || !validCuePlacement(s, shot.cue.x, shot.cue.y)) return 'err.badCue';
     }
     if (needCall(s)) {
-      if (!(shot.call >= 0 && shot.call <= 5 && shot.call === Math.round(shot.call))) return '請先指定 8 號球的袋口';
+      if (!(shot.call >= 0 && shot.call <= 5 && shot.call === Math.round(shot.call))) return 'err.call8';
     }
     if (needCallBall(s) && shot.safety !== 1) {
       var cb = getBall(s, shot.cb);
-      if (!cb || cb.pocket >= 0 || cb.id < 1) return '請先點選要打的球';
-      if (!(shot.call >= 0 && shot.call <= 5 && shot.call === Math.round(shot.call))) return '請再點選這顆球要進的袋口';
+      if (!cb || cb.pocket >= 0 || cb.id < 1) return 'err.pickBall';
+      if (!(shot.call >= 0 && shot.call <= 5 && shot.call === Math.round(shot.call))) return 'err.pickPocket';
     }
     return null;
   }
@@ -337,7 +337,7 @@
 
   function resolveChoice(s0, choice, rng) {
     var s = clone(s0), p = s.pending;
-    if (!p || s.phase !== 'choice') return { state: s, error: '目前沒有需要選擇的事項' };
+    if (!p || s.phase !== 'choice') return { state: s, error: 'err.noChoiceNow' };
     if (p.options.indexOf(choice) < 0) choice = defaultChoice(s);
     var info = { choice: choice, type: p.type, player: p.player };
     var opp = other(s.breaker);

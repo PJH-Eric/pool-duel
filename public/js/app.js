@@ -3,6 +3,7 @@
   'use strict';
   const $ = s => document.querySelector(s), $$ = s => Array.from(document.querySelectorAll(s));
   const Store = root.Store, Sound = root.Sound, Rules = root.PoolRules, AI = root.PoolAI, P = root.PoolPhysics, C = root.PoolConfig, Themes = root.PoolThemes, RNG = root.RNG;
+  const T = (k, p) => root.I18N.t(k, p);
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const firstChar = n => Array.from(String(n || '?'))[0] || '?';
   const App = { screen: 'home', game: null, back: 'home', setupNote: '' };
@@ -33,7 +34,7 @@
   };
   function confirmBox(title, text, yesLabel) {
     return new Promise(res => {
-      const m = $('#confirmModal'); $('#cfTitle').textContent = title; $('#cfText').textContent = text; $('#cfYes').textContent = yesLabel || '確定';
+      const m = $('#confirmModal'); $('#cfTitle').textContent = title; $('#cfText').textContent = text; $('#cfYes').textContent = yesLabel || T('common.ok');
       m.classList.remove('hidden'); const prev = document.activeElement; $('#cfNo').focus();
       const done = v => { m.classList.add('hidden'); $('#cfYes').onclick = $('#cfNo').onclick = null; m.onkeydown = null; if (prev && prev.focus) prev.focus(); res(v); };
       $('#cfYes').onclick = () => done(true); $('#cfNo').onclick = () => done(false);
@@ -101,57 +102,63 @@
 
   /* ---------- 設定 ---------- */
   const SETTINGS_DEF = [
-    { g: '聲音' },
-    { k: 'musicOn', t: 'toggle', b: '背景音樂', d: '輕爵士酒吧風' },
-    { k: 'musicVol', t: 'slider', b: '音樂音量' },
-    { k: 'sfxOn', t: 'toggle', b: '音效', d: '擊球、碰庫、進袋' },
-    { k: 'sfxVol', t: 'slider', b: '音效音量' },
-    { k: 'vibrate', t: 'toggle', b: '震動', d: '手機進袋與犯規時震動' },
-    { g: '操作' },
-    { k: 'aim', t: 'seg', b: '瞄準輔助', d: '單機用；線上由房主統一決定', opts: [['full', '完整'], ['short', '簡短'], ['off', '關閉']] },
-    { k: 'showSpin', t: 'toggle', b: '擊球點面板預設展開', d: '平常收起，要用時再點「擊球點」' },
-    { k: 'swapControls', t: 'toggle', b: '操作列左右對調', d: '左手習慣者使用' },
-    { g: '畫面' },
-    { k: 'bigNumbers', t: 'toggle', b: '放大球號', d: '球上的數字加大' },
-    { k: 'colorAssist', t: 'toggle', b: '色彩輔助', d: '加強球的對比與邊框' },
-    { k: 'reduceMotion', t: 'toggle', b: '減少動態', d: '關閉首頁動畫與轉場' },
-    { g: '桌布（只影響你自己的畫面）' },
-    { k: 'felt', t: 'swatch', opts: Object.keys(Themes.FELTS).map(k => [k, Themes.FELTS[k].name, 'background:radial-gradient(circle at 40% 35%,' + Themes.FELTS[k].c1 + ',' + Themes.FELTS[k].c3 + ')']) },
-    { g: '場景（只影響你自己的畫面）' },
-    { k: 'scene', t: 'swatch', opts: Object.keys(Themes.SCENES).map(k => [k, Themes.SCENES[k].name, 'background:linear-gradient(' + Themes.SCENES[k].top + ',' + Themes.SCENES[k].bottom + ')']) },
-    { g: '球桿（對手與觀戰者看得到）' },
-    { k: 'cue', t: 'swatch', cue: true, opts: Object.keys(Themes.CUES).map(k => [k, Themes.CUES[k].name, '', Themes.CUES[k]]) }
+    { g: 'set.g.language' },
+    { k: '_lang', t: 'lang', b: 'set.language', d: 'set.languageDesc' },
+    { g: 'set.g.sound' },
+    { k: 'musicOn', t: 'toggle', b: 'set.music', d: 'set.musicDesc' },
+    { k: 'musicVol', t: 'slider', b: 'set.musicVol' },
+    { k: 'sfxOn', t: 'toggle', b: 'set.sfx', d: 'set.sfxDesc' },
+    { k: 'sfxVol', t: 'slider', b: 'set.sfxVol' },
+    { k: 'vibrate', t: 'toggle', b: 'set.vibrate', d: 'set.vibrateDesc' },
+    { g: 'set.g.control' },
+    { k: 'aim', t: 'seg', b: 'set.aim', d: 'set.aimDesc', opts: [['full', 'opt.aim.full'], ['short', 'opt.aim.short'], ['off', 'opt.aim.off']] },
+    { k: 'showSpin', t: 'toggle', b: 'set.showSpin', d: 'set.showSpinDesc' },
+    { k: 'swapControls', t: 'toggle', b: 'set.swap', d: 'set.swapDesc' },
+    { g: 'set.g.display' },
+    { k: 'bigNumbers', t: 'toggle', b: 'set.bigNumbers', d: 'set.bigNumbersDesc' },
+    { k: 'colorAssist', t: 'toggle', b: 'set.colorAssist', d: 'set.colorAssistDesc' },
+    { k: 'reduceMotion', t: 'toggle', b: 'set.reduceMotion', d: 'set.reduceMotionDesc' },
+    { g: 'set.g.felt' },
+    { k: 'felt', t: 'swatch', al: 'set.g.felt', opts: Object.keys(Themes.FELTS).map(k => [k, 'felt.' + k, 'background:radial-gradient(circle at 40% 35%,' + Themes.FELTS[k].c1 + ',' + Themes.FELTS[k].c3 + ')']) },
+    { g: 'set.g.scene' },
+    { k: 'scene', t: 'swatch', al: 'set.g.scene', opts: Object.keys(Themes.SCENES).map(k => [k, 'scene.' + k, 'background:linear-gradient(' + Themes.SCENES[k].top + ',' + Themes.SCENES[k].bottom + ')']) },
+    { g: 'set.g.cue' },
+    { k: 'cue', t: 'swatch', cue: true, al: 'set.g.cue', opts: Object.keys(Themes.CUES).map(k => [k, 'cue.' + k, '', Themes.CUES[k]]) }
   ];
   let settingsOpener = null;
   function buildSettings() {
     const body = $('#setBody'); body.innerHTML = '';
     SETTINGS_DEF.forEach(def => {
-      if (def.g) { const g = document.createElement('div'); g.className = 'set-group'; g.textContent = def.g; body.appendChild(g); return; }
+      if (def.g) { const g = document.createElement('div'); g.className = 'set-group'; g.textContent = T(def.g); body.appendChild(g); return; }
       const row = document.createElement('div'); row.className = 'set-row'; row.dataset.k = def.k;
       if (def.t === 'swatch') {
-        const box = document.createElement('div'); box.className = 'swatches'; box.setAttribute('role', 'radiogroup'); box.setAttribute('aria-label', def.k);
+        const box = document.createElement('div'); box.className = 'swatches'; box.setAttribute('role', 'radiogroup'); box.setAttribute('aria-label', T(def.al));
         def.opts.forEach(o => {
           const b = document.createElement('button'); b.type = 'button'; b.className = 'swatch'; b.setAttribute('role', 'radio'); b.dataset.v = o[0];
           const style = def.cue ? '--tip:' + o[3].tip + ';--shaft:' + o[3].shaft + ';--butt:' + o[3].butt + ';background:#2a1a10' : o[2];
-          b.innerHTML = '<span class="sw' + (def.cue ? ' cue' : '') + '" style="' + style + '"></span>' + esc(o[1]);
+          b.innerHTML = '<span class="sw' + (def.cue ? ' cue' : '') + '" style="' + style + '"></span>' + esc(T(o[1]));
           b.onclick = () => { Store.set(def.k, o[0]); Sound.sfx.click(); syncSettings(); };
           box.appendChild(b);
         });
         row.style.display = 'block'; row.appendChild(box);
       } else {
-        const tx = document.createElement('div'); tx.className = 'tx'; tx.innerHTML = '<b>' + esc(def.b) + '</b>' + (def.d ? '<span>' + esc(def.d) + '</span>' : '');
+        const tx = document.createElement('div'); tx.className = 'tx'; tx.innerHTML = '<b>' + esc(T(def.b)) + '</b>' + (def.d ? '<span>' + esc(T(def.d)) + '</span>' : '');
         row.appendChild(tx);
         if (def.t === 'toggle') {
-          const t = document.createElement('button'); t.type = 'button'; t.className = 'toggle'; t.setAttribute('role', 'switch'); t.setAttribute('aria-label', def.b);
+          const t = document.createElement('button'); t.type = 'button'; t.className = 'toggle'; t.setAttribute('role', 'switch'); t.setAttribute('aria-label', T(def.b));
           t.onclick = () => { Store.set(def.k, !Store.get(def.k)); Sound.unlock(); Sound.sfx.click(); syncSettings(); };
           row.appendChild(t);
         } else if (def.t === 'slider') {
-          const s = document.createElement('div'); s.className = 'slider set-slider'; s.setAttribute('role', 'slider'); s.setAttribute('aria-label', def.b); s.tabIndex = 0;
+          const s = document.createElement('div'); s.className = 'slider set-slider'; s.setAttribute('role', 'slider'); s.setAttribute('aria-label', T(def.b)); s.tabIndex = 0;
           s.innerHTML = '<div class="knob"></div>'; row.appendChild(s);
           bindSlider(s, { min: 0, max: 1, step: 0.05, get: () => Store.get(def.k), set: v => { Store.set(def.k, v); Sound.unlock(); }, end: () => Sound.sfx.click() });
+        } else if (def.t === 'lang') {
+          const sg = document.createElement('div'); sg.className = 'seg'; sg.setAttribute('role', 'radiogroup'); sg.setAttribute('aria-label', T(def.b));
+          [['zh-Hant', '繁體中文'], ['en', 'English']].forEach(o => { const b = document.createElement('button'); b.type = 'button'; b.className = 'seg-b'; b.setAttribute('role', 'radio'); b.dataset.v = o[0]; b.setAttribute('lang', o[0] === 'en' ? 'en' : 'zh-Hant'); b.textContent = o[1]; b.onclick = () => { root.I18N.setLang(o[0]); }; sg.appendChild(b); });
+          row.appendChild(sg);
         } else if (def.t === 'seg') {
-          const sg = document.createElement('div'); sg.className = 'seg'; sg.setAttribute('role', 'radiogroup'); sg.setAttribute('aria-label', def.b);
-          def.opts.forEach(o => { const b = document.createElement('button'); b.type = 'button'; b.className = 'seg-b'; b.setAttribute('role', 'radio'); b.dataset.v = o[0]; b.textContent = o[1]; b.onclick = () => { Store.set(def.k, o[0]); Sound.sfx.click(); syncSettings(); }; sg.appendChild(b); });
+          const sg = document.createElement('div'); sg.className = 'seg'; sg.setAttribute('role', 'radiogroup'); sg.setAttribute('aria-label', T(def.b));
+          def.opts.forEach(o => { const b = document.createElement('button'); b.type = 'button'; b.className = 'seg-b'; b.setAttribute('role', 'radio'); b.dataset.v = o[0]; b.textContent = T(o[1]); b.onclick = () => { Store.set(def.k, o[0]); Sound.sfx.click(); syncSettings(); }; sg.appendChild(b); });
           row.appendChild(sg);
         }
       }
@@ -161,7 +168,7 @@
   }
   function syncSettings() {
     $$('#setBody .set-row').forEach(row => {
-      const k = row.dataset.k, v = Store.get(k);
+      const k = row.dataset.k, v = k === '_lang' ? root.I18N.lang : Store.get(k);
       const t = row.querySelector('.toggle'); if (t) t.setAttribute('aria-checked', v ? 'true' : 'false');
       row.querySelectorAll('.seg-b, .swatch').forEach(b => b.setAttribute('aria-checked', b.dataset.v === v ? 'true' : 'false'));
       const s = row.querySelector('.set-slider'); if (s) s.__render && s.__render();
@@ -190,7 +197,7 @@
   $('#setClose').onclick = $('#setDone').onclick = closeSettings;
   $('#settingsModal').addEventListener('pointerdown', e => { if (e.target.id === 'settingsModal') closeSettings(); });
   $('#settingsModal').addEventListener('keydown', e => { if (e.key === 'Escape') { closeSettings(); e.stopPropagation(); } trapTab(e, $('#settingsModal')); });
-  $('#setReset').onclick = () => { Store.reset(); buildSettings(); applySettings(); App.toast('已恢復預設'); };
+  $('#setReset').onclick = () => { Store.reset(); buildSettings(); applySettings(); App.toast(T('toast.resetDone')); };
   document.addEventListener('click', e => { const g = e.target.closest('[data-gear], #homeGear'); if (g) App.openSettings(); });
 
   /* ---------- 通用滑桿 ---------- */
@@ -226,34 +233,28 @@
 
   /* ---------- 單機設定 ---------- */
   const KIND_INFO = [
-    { id: 'nine', name: '簡化九球', tag: '預設', ball: '#f0be1e', stripe: true, desc: '一局約 5 分鐘。先碰桌上最小號的球，把 9 號球打進袋就贏。' },
-    { id: 'eight', name: '八號球', tag: '正式規則', ball: '#17171a', desc: '分全色球與半色球，先清完自己的球，再把 8 號球打進指定的袋口。' },
-    { id: 'score', name: '14-1 球', tag: '叫球', ball: '#d8322a', desc: '先點球、再點袋口叫球；叫中得 1 分並繼續，犯規扣 1 分，先拿 30 分獲勝。' }
+    { id: 'nine', ball: '#f0be1e', stripe: true },
+    { id: 'eight', ball: '#17171a' },
+    { id: 'score', ball: '#d8322a' }
   ];
-  const LEVEL_INFO = [
-    { id: 'kids', name: '幼幼班', note: '袋口放大 25%、不判犯規、電腦常常失手，還有完整的輔助線。適合小朋友第一次玩。' },
-    { id: 'easy', name: '簡單', note: '電腦打最近的球，有時會失誤，也不太會想接下來的走位。' },
-    { id: 'normal', name: '普通', note: '電腦會挑好打的球與袋口，會避免犯規，沒球可打時會打防守。' },
-    { id: 'hard', name: '困難', note: '電腦會用同一套物理引擎預演多種打法、考慮走位與旋轉，很少失誤。' },
-    { id: 'myth', name: '神話', note: '幾乎不會失手：預演更多球路與力道、用定桿拉桿推桿精算走位，沒把握時會打安全球。真的很難贏。' }
-  ];
+  const LEVEL_IDS = ['kids', 'easy', 'normal', 'hard', 'myth'];
   let setupKind = 'nine', setupMode = 'ai', setupLevel = 'easy';
   function refreshSetup() {
     const box = $('#kindCards'); box.innerHTML = '';
     KIND_INFO.forEach(k => {
       const b = document.createElement('button'); b.type = 'button'; b.className = 'kcard'; b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', k.id === setupKind ? 'true' : 'false');
       const ballStyle = k.stripe ? 'background:linear-gradient(' + k.ball + ' 0 28%,#f6f1e4 28% 72%,' + k.ball + ' 72%)' : 'background:' + k.ball;
-      b.innerHTML = '<div class="k-top"><span class="kball" style="' + ballStyle + '"></span><span class="k-name">' + k.name + '</span><span class="k-tag">' + k.tag + '</span></div><p>' + k.desc + '</p>';
+      b.innerHTML = '<div class="k-top"><span class="kball" style="' + ballStyle + '"></span><span class="k-name">' + T('kind.' + k.id + '.name') + '</span><span class="k-tag">' + T('kind.' + k.id + '.tag') + '</span></div><p>' + T('kind.' + k.id + '.desc') + '</p>';
       b.onclick = () => { setupKind = k.id; Sound.sfx.click(); refreshSetup(); };
       box.appendChild(b);
     });
     $$('#modeSeg .seg-b').forEach(b => { b.setAttribute('aria-checked', b.dataset.v === setupMode ? 'true' : 'false'); b.onclick = () => { setupMode = b.dataset.v; Sound.sfx.click(); refreshSetup(); }; });
     const ls = $('#levelSeg'); ls.innerHTML = '';
-    LEVEL_INFO.forEach(l => { const b = document.createElement('button'); b.type = 'button'; b.className = 'seg-b'; b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', l.id === setupLevel ? 'true' : 'false'); b.textContent = l.name; b.onclick = () => { setupLevel = l.id; Sound.sfx.click(); refreshSetup(); }; ls.appendChild(b); });
-    $('#levelNote').textContent = (LEVEL_INFO.find(l => l.id === setupLevel) || {}).note || '';
+    LEVEL_IDS.forEach(id => { const l = { id }; const b = document.createElement('button'); b.type = 'button'; b.className = 'seg-b'; b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', l.id === setupLevel ? 'true' : 'false'); b.textContent = T('level.' + id + '.name'); b.onclick = () => { setupLevel = l.id; Sound.sfx.click(); refreshSetup(); }; ls.appendChild(b); });
+    $('#levelNote').textContent = T('level.' + setupLevel + '.note');
     $('#levelBox').classList.toggle('hidden', setupMode !== 'ai');
     $('#practiceNote').classList.toggle('hidden', setupMode !== 'practice');
-    $('#btnStartSolo').textContent = setupMode === 'ai' ? '開始對戰' : '開始練習';
+    $('#btnStartSolo').textContent = setupMode === 'ai' ? T('setup.startAi') : T('setup.startPractice');
   }
   $('#btnStartSolo').onclick = () => {
     Store.set('lastKind', setupKind); Store.set('lastLevel', setupLevel); Store.set('lastMode', setupMode);
@@ -272,9 +273,8 @@
     App.back = 'setup';
     App.show('game');
     const g = ensureGame(); g.resume();
-    const you = Store.get('nickname') || '你';
-    const lv = LEVEL_INFO.find(l => l.id === cfg.level);
-    const seats = cfg.mode === 'practice' ? [{ name: you }, { name: '練習' }] : [{ name: you }, { name: '電腦（' + (lv ? lv.name : '') + '）' }];
+    const you = Store.get('nickname') || T('seat.you');
+    const seats = cfg.mode === 'practice' ? [{ name: you }, { name: T('seat.practice'), key: 'seat.practice' }] : [{ name: you }, { name: T('seat.ai', { level: T('level.' + cfg.level + '.name') }), key: 'seat.ai', level: cfg.level }];
     $('#gChatBox').classList.add('hidden'); $('#gSpec').classList.add('hidden');
     $('#gPanel').classList.add('hidden'); $('#gDrawer').classList.add('hidden');
     $('#btnRack').classList.toggle('hidden', cfg.mode !== 'practice');
@@ -292,7 +292,7 @@
     const me = room.youSeat;
     g.start({ mode: 'online', kind: gameMsg.kind, mySeat: me, state: gameMsg.state, seats: gameMsg.seats.map(s => ({ name: s.name })), cues: gameMsg.seats.map(s => s.cue), aimMode: gameMsg.cfg.aim, net: root.Net, turnMs: gameMsg.turnMs, extensionUsed: gameMsg.extensionUsed, bigPockets: gameMsg.cfg.pockets === 'big' });
     $('#gSpec').classList.toggle('hidden', me >= 0);
-    $('#gSpec').textContent = '你是觀戰者：可以看全桌、可以聊天';
+    $('#gSpec').textContent = T('game.specNote');
     applySettings(); resetDrawer(); unread = 0; updateUnread();
   };
 
@@ -302,24 +302,24 @@
   function miniBall(id, out, next) {
     const col = Themes.ballColor(id);
     const style = id >= 9 ? 'background:linear-gradient(' + col + ' 0 28%,#f6f1e4 28% 72%,' + col + ' 72%)' : 'background:' + col;
-    return '<span class="mini-ball' + (out ? ' out' : '') + (next ? ' next' : '') + '" style="' + style + '" title="' + id + ' 號"><b>' + id + '</b></span>';
+    return '<span class="mini-ball' + (out ? ' out' : '') + (next ? ' next' : '') + '" style="' + style + '" title="' + esc(T('hud.ballNo', { n: id })) + '"><b>' + id + '</b></span>';
   }
   App.ui = {
     hud(vm) {
       const resolvingShot = ['strike', 'roll', 'settle'].includes(vm.phase);
-      const text = resolvingShot ? '球況更新中…' : vm.status;
-      const mine = !resolvingShot && (text.indexOf('輪到你') === 0 || text === '請做出選擇');
+      const text = resolvingShot ? T('hud.resolving') : vm.status;
+      const mine = !resolvingShot && !!vm.statusMine;
       gameStatus.update(text, mine, vm.statusRevision + ':' + vm.phase);
       let html = '';
       vm.seats.forEach(s => {
-        const tag = s.you ? '<span class="tag">你</span>' : '';
+        const tag = s.you ? '<span class="tag">' + esc(T('hud.you')) + '</span>' : '';
         const right = vm.kind === 'score' ? '<span class="pscore">' + s.score + '</span>' : '';
         const subtitle = vm.kind === 'score' ? s.line2 : [s.line1, s.line2].filter(Boolean).join(' ・ ');
         const potted = s.pottedBalls || [];
-        const historyLabel = potted.length ? '已進袋：' + potted.map(id => id + ' 號球').join('、') : '尚未進袋';
-        const history = potted.length ? potted.map(id => miniBall(id)).join('') : '<span class="potted-empty">尚未進袋</span>';
+        const historyLabel = potted.length ? T('hud.pottedList', { list: potted.map(id => T('hud.ballN', { n: id })).join(T('common.sep')) }) : T('hud.pottedNone');
+        const history = potted.length ? potted.map(id => miniBall(id)).join('') : '<span class="potted-empty">' + esc(T('hud.pottedNone')) + '</span>';
         html += '<div class="pseat seat-' + s.seat + (s.isTurn ? ' turn' : '') + '">' + seatHtml(s) + '<div class="pseat-info"><div class="pname"><span class="n">' + esc(s.name) + '</span>' + tag + right + '</div><div class="pline">' + esc(subtitle) + '</div></div>' +
-          '<div class="potted-row"><span class="potted-label">進袋</span><div class="potted-history" role="img" aria-label="' + esc(historyLabel) + '">' + history + '</div></div></div>';
+          '<div class="potted-row"><span class="potted-label">' + esc(T('hud.potted')) + '</span><div class="potted-history" role="img" aria-label="' + esc(historyLabel) + '">' + history + '</div></div></div>';
       });
       $('#gSeats').innerHTML = html;
     },
@@ -329,7 +329,7 @@
       $('#btnSafety').classList.toggle('hidden', !c.safetyBtn); $('#btnSafety').setAttribute('aria-pressed', c.safety ? 'true' : 'false');
       $('#fineSlider').classList.toggle('off', dis); $('#powerSlider').classList.toggle('off', dis);
       $('#spinBtn').disabled = dis; $$('#cueModes button').forEach(b => { b.disabled = dis; }); $('#gControls').classList.toggle('spectate', !!c.spectator);
-      $('#btnShoot').textContent = c.spectator ? '觀戰中' : (c.needCall && !c.canShoot ? '先叫球' : (c.thinking ? '對手思考中' : '擊 球'));
+      $('#btnShoot').textContent = c.spectator ? T('ctl.watching') : (c.needCall && !c.canShoot ? T('ctl.callFirst') : (c.thinking ? T('ctl.thinking') : T('ctl.shoot')));
     },
     power(p) { $('#powerVal').textContent = Math.round(p * 100) + '%'; powerSlider.render(); },
     fine(d) { $('#fineVal').textContent = (d >= 0 ? '+' : '') + d.toFixed(2) + '°'; fineSlider.render(); },
@@ -343,9 +343,9 @@
     extension(vm) {
       const button = $('#btnExtend');
       button.disabled = !vm.enabled;
-      button.textContent = vm.pending ? '…' : (vm.used ? '已用' : '+25');
+      button.textContent = vm.pending ? '…' : (vm.used ? T('hud.extUsed') : '+25');
       button.classList.toggle('spent', vm.used);
-      const label = vm.used ? '本盤延長機會已用完' : '延長回合 25 秒；每位玩家每盤一次';
+      const label = vm.used ? T('hud.extendUsedAria') : T('hud.extendAria');
       button.setAttribute('aria-label', label);
       button.title = label;
     },
@@ -360,8 +360,7 @@
     const l = (50 + u * 42) + '%', t = (50 + v * 42) + '%';
     [$('#spinDot'), $('#spinMini i')].forEach(d => { d.style.left = l; d.style.top = t; });
   }
-  const MODE_NOTE = { follow: '推桿：碰到球後，母球會繼續往前追', stop: '定桿：正撞時，母球會停在原地', draw: '拉桿：碰到球後，母球會往回縮', jump: '跳桿：母球會飛過黃色圈前面的球再落地（力度越大飛越遠）' };
-  const MODE_NAME = { follow: '推桿', stop: '定桿', draw: '拉桿', jump: '跳桿' };
+  const MODE_NOTE = m => T('mode.' + m + 'Note'), MODE_NAME = m => T('mode.' + m);
   const smallScreen = () => matchMedia('(max-aspect-ratio: 1/1), (max-width: 820px), (max-height: 520px)').matches;
   function placeModes() {            // 小螢幕：四顆出桿按鈕收進擊球點面板；大螢幕：放在擊球點旁
     const box = $('#cueModes'), pop = $('#spinPop'), ctl = document.querySelector('.spin-ctl');
@@ -369,8 +368,8 @@
     else if (box.parentNode !== ctl) ctl.appendChild(box);
   }
   window.addEventListener('resize', placeModes); placeModes();
-  function syncCueModes() { const m = App.game && App.game.cueMode ? App.game.cueMode() : null; $$('#cueModes button').forEach(b => b.setAttribute('aria-pressed', b.dataset.mode === m ? 'true' : 'false')); const lb = document.querySelector('#spinBtn .lbl'); if (lb) lb.textContent = m ? MODE_NAME[m] : '擊球點'; }
-  $$('#cueModes button').forEach(b => { b.onclick = () => { const g = App.game; if (!g) return; g.setCueMode(b.dataset.mode); const m = g.cueMode(); if (m && g.ui.toast) g.ui.toast(MODE_NOTE[m]); }; });
+  function syncCueModes() { const m = App.game && App.game.cueMode ? App.game.cueMode() : null; $$('#cueModes button').forEach(b => b.setAttribute('aria-pressed', b.dataset.mode === m ? 'true' : 'false')); const lb = document.querySelector('#spinBtn .lbl'); if (lb) lb.textContent = m ? MODE_NAME(m) : T('ctl.spin'); }
+  $$('#cueModes button').forEach(b => { b.onclick = () => { const g = App.game; if (!g) return; g.setCueMode(b.dataset.mode); const m = g.cueMode(); if (m && g.ui.toast) g.ui.toast(MODE_NOTE(m)); }; });
   function setSpinOpen(open) { $('#spinPop').classList.toggle('hidden', !open); $('#spinBtn').setAttribute('aria-expanded', open ? 'true' : 'false'); }
   $('#spinBtn').onclick = () => setSpinOpen($('#spinPop').classList.contains('hidden'));
   $('#spinReset').onclick = () => { App.game && App.game.setSpin(0, 0); };
@@ -467,11 +466,11 @@
     const inGame = g && g.state && g.state.phase !== 'over';
     if (online) {
       const spectator = g.mySeat < 0;
-      const ok = await confirmBox(spectator ? '離開觀戰？' : (inGame ? '離開對局？' : '離開房間？'), spectator ? '離開後可以從大廳再進來。' : (inGame ? '對局進行中離開會判負。' : '會回到大廳。'), '離開');
+      const ok = await confirmBox(spectator ? T('leave.specTitle') : (inGame ? T('leave.gameTitle') : T('leave.roomTitle')), spectator ? T('leave.specText') : (inGame ? T('leave.gameText') : T('leave.roomText')), T('leave.yes'));
       if (!ok) return;
       root.PoolLobby.leaveRoom(); return;
     }
-    if (inGame && g.cfg.mode === 'ai') { const ok = await confirmBox('離開對局？', '這局還沒打完，離開後不會記錄。', '離開'); if (!ok) return; }
+    if (inGame && g.cfg.mode === 'ai') { const ok = await confirmBox(T('leave.gameTitle'), T('leave.soloText'), T('leave.yes')); if (!ok) return; }
     App.show(App.back === 'setup' ? 'setup' : 'home');
   };
 
@@ -479,42 +478,42 @@
   function showResult(vm) {
     const ov = $('#resultOverlay');
     if (!vm) { ov.classList.add('hidden'); return; }
-    const g = App.game, online = vm.mode === 'online';
-    let title, badgeSeat = vm.winner;
-    if (vm.draw) title = '平手'; else if (vm.spectator) title = vm.names[vm.winner] + ' 獲勝！'; else title = vm.youWin ? '你贏了！' : '你輸了';
+    const online = vm.mode === 'online', wasHidden = ov.classList.contains('hidden');
+    let title;
+    if (vm.draw) title = T('res.draw'); else if (vm.spectator) title = T('res.specWin', { name: vm.names[vm.winner] }); else title = vm.youWin ? T('res.youWin') : T('res.youLose');
     $('#resTitle').textContent = title;
     $('#resBadge').innerHTML = vm.draw ? '' : '<div class="avatar s' + vm.winner + '">' + esc(firstChar(vm.names[vm.winner])) + '</div>';
-    $('#resReason').textContent = (vm.draw ? '' : vm.names[vm.winner] + ' 獲勝：') + vm.reason + '（' + vm.kindName + '，共 ' + vm.shots + ' 桿）';
+    $('#resReason').textContent = T('res.reasonLine', { who: vm.draw ? '' : T('res.whoWins', { name: vm.names[vm.winner] }), reason: vm.reason, kind: vm.kindName, shots: vm.shots });
     const s0 = vm.stats[0], s1 = vm.stats[1];
-    const row = (a, m, b) => '<div class="v">' + a + '</div><div class="mid">' + m + '</div><div class="v">' + b + '</div>';
+    const row = (a, m, b) => '<div class="v">' + a + '</div><div class="mid">' + esc(m) + '</div><div class="v">' + b + '</div>';
     $('#resStats').innerHTML = '<div class="head">' + esc(vm.names[0]) + '</div><div></div><div class="head">' + esc(vm.names[1]) + '</div>' +
-      (vm.kind === 'score' ? row(vm.scores[0], '得分', vm.scores[1]) : '') + row(s0.potted, '進袋數', s1.potted) + row(s0.best, '最長連桿', s1.best) + row(s0.fouls, '犯規', s1.fouls);
+      (vm.kind === 'score' ? row(vm.scores[0], T('res.score'), vm.scores[1]) : '') + row(s0.potted, T('res.potted'), s1.potted) + row(s0.best, T('res.bestRun'), s1.best) + row(s0.fouls, T('res.fouls'), s1.fouls);
     const again = $('#resAgain'), room = $('#resRoom'), home = $('#resHome');
-    again.disabled = false; again.textContent = '再來一局';
+    again.disabled = false; again.textContent = T('res.again');
     if (online) {
-      room.textContent = '回到房間'; $('#resNote').textContent = vm.spectator ? '等玩家決定再來一局或回到房間。' : '按「再來一局」會互換開球權，對手也同意後立刻開始。';
+      room.textContent = T('res.room'); $('#resNote').textContent = vm.spectator ? T('res.noteSpec') : T('res.noteOnline');
       again.classList.toggle('hidden', vm.spectator); room.classList.toggle('hidden', false);
-      again.onclick = () => { root.Net.send({ type: 'rematch' }); again.disabled = true; again.textContent = '等待對手同意…'; };
+      again.onclick = () => { root.Net.send({ type: 'rematch' }); again.disabled = true; again.textContent = T('res.waitOpp'); };
       room.onclick = () => root.Net.send({ type: 'tolobby' });
       home.onclick = () => root.PoolLobby.leaveRoom(true);
     } else {
       again.classList.remove('hidden'); room.classList.remove('hidden');
-      room.textContent = '回到設定'; $('#resNote').textContent = '單機沒有房間，「回到設定」會回到規則與強度選擇。';
+      room.textContent = T('res.toSetup'); $('#resNote').textContent = T('res.noteSolo');
       again.onclick = () => { Sound.unlock(); App.game.nextGame(); };
       room.onclick = () => { App.show('setup'); };
       home.onclick = () => App.show('home');
     }
-    home.textContent = '回到首頁';
-    ov.classList.remove('hidden'); again.focus && !again.classList.contains('hidden') && again.focus();
+    home.textContent = T('res.home');
+    ov.classList.remove('hidden'); if (wasHidden) again.focus && !again.classList.contains('hidden') && again.focus();
   }
   App.updateRematch = function (room) {
     const ov = $('#resultOverlay'); if (ov.classList.contains('hidden') || !room) return;
     const again = $('#resAgain'); const me = room.members.find(m => m.id === root.Net.personId), opp = room.members.find(m => m.role === 'player' && m.id !== root.Net.personId);
     if (!me || me.role !== 'player') return;
-    if (!opp || !opp.connected) { again.disabled = true; again.textContent = '對手已離開'; return; }
-    if (opp.again && !me.again) { again.disabled = false; again.textContent = '對手想再來一局，按這裡同意'; }
-    else if (me.again) { again.disabled = true; again.textContent = '等待對手同意…'; }
-    else { again.disabled = false; again.textContent = '再來一局'; }
+    if (!opp || !opp.connected) { again.disabled = true; again.textContent = T('res.oppLeft'); return; }
+    if (opp.again && !me.again) { again.disabled = false; again.textContent = T('res.oppWants'); }
+    else if (me.again) { again.disabled = true; again.textContent = T('res.waitOpp'); }
+    else { again.disabled = false; again.textContent = T('res.again'); }
   };
   /* 選擇視窗 */
   let choiceTimer = 0;
@@ -525,52 +524,22 @@
     const box = $('#chOpts'); box.innerHTML = '';
     vm.options.forEach((o, i) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn' + (i === 0 ? ' gold' : ''); b.innerHTML = esc(o[1]) + '<small>' + esc(o[2]) + '</small>'; b.onclick = () => vm.onPick(o[0]); box.appendChild(b); });
     let left = vm.seconds; const tm = $('#chTimer');
-    const tick = () => { tm.textContent = left != null ? '剩 ' + left + ' 秒，時間到會自動選：' + vm.options[(vm.title.indexOf('開球沒有達標') >= 0) ? 0 : 0][1] : ''; };
-    if (left != null) { tick(); choiceTimer = setInterval(() => { left = Math.max(0, left - 1); tm.textContent = '剩 ' + left + ' 秒，時間到會自動選擇'; }, 1000); } else tm.textContent = '';
+    const tick = () => { tm.textContent = left != null ? T('choice.timerFirst', { n: left, opt: vm.options[0][1] }) : ''; };
+    if (left != null) { tick(); choiceTimer = setInterval(() => { left = Math.max(0, left - 1); tm.textContent = T('choice.timer', { n: left }); }, 1000); } else tm.textContent = '';
     ov.classList.remove('hidden'); box.firstChild.focus();
   }
 
   /* ---------- 首頁、說明 ---------- */
   function renderHomeStats() {
     const s = Store.get('stats');
-    $('#homeStats').textContent = s.games ? '戰績：' + s.wins + ' 勝 ' + s.losses + ' 敗 ・ 最長連桿 ' + s.bestRun + ' 顆' : '';
+    $('#homeStats').textContent = s.games ? T('home.stats', { w: s.wins, l: s.losses, run: s.bestRun }) : '';
   }
   $('#btnSolo').onclick = () => { Sound.unlock(); Sound.sfx.click(); setupKind = Store.get('lastKind'); setupMode = Store.get('lastMode'); setupLevel = Store.get('lastLevel'); App.show('setup'); };
   $('#btnOnline').onclick = () => { Sound.unlock(); Sound.sfx.click(); root.PoolLobby.enter(); };
   $('#btnHelp').onclick = () => { Sound.unlock(); Sound.sfx.click(); App.show('help'); };
   document.addEventListener('click', e => { const b = e.target.closest('[data-back]'); if (b) { Sound.sfx.click(); App.show(b.dataset.back); } });
 
-  $('#helpBody').innerHTML = `
-    <h3>基本操作</h3>
-    <div class="card"><div class="kv">
-      <b>瞄準</b><span>在桌面上任意處<b>拖曳</b>，球桿就會繞著母球轉。下方的「微調角度」可以做 0.05° 的精調。</span>
-      <b>力度</b><span>拖曳「力度」條（左弱右強）。球桿後拉的距離會跟著變。</span>
-      <b>擊球</b><span>按下大大的「擊球」按鈕才會出桿，拖曳與調力度都不會誤擊球。</span>
-      <b>推桿／定桿／拉桿</b><span>擊球鈕左邊有三個快捷：<b>推桿</b>＝打母球偏上，碰到球後母球<b>繼續往前追</b>；<b>定桿</b>＝正撞時母球<b>停在原地</b>（做走位最常用）；<b>拉桿</b>＝打偏下，碰到球後母球<b>往回縮</b>。選了之後瞄準線的白色短線會即時顯示母球碰球後會跑去哪裡；再按一次同一個就取消。快鍵：1 推桿、2 定桿、3 拉桿、0 取消。</span>
-      <b>跳桿</b><span>前面有球擋住路線時，按「<b>跳桿</b>」（快鍵 4）：母球會<b>飛過去</b>，落在瞄準線上黃色圈的位置才開始滾；飛行時碰不到地上的球、也不會掉進袋口。<b>力度越大飛得越遠</b>（約 130～460 單位），落地會損失一點速度，而且跳桿時不能同時用推／定／拉桿。落地後第一個碰到的球仍然要合規則，不然一樣算犯規。</span>
-      <b>擊球點</b><span>點左下的「擊球點」，在母球上點一個位置：偏上＝出桿後追球、偏下＝縮球（拉回）、偏左右＝側旋，碰到庫邊會偏折。平常保持正中央就好。</span>
-      <b>自由球</b><span>對手犯規後，你的母球會出現綠色虛線圈，可以拖曳到任何空位；紅色代表位置不合法。</span>
-      <b>電腦鍵盤</b><span>← → 微調角度（Shift 更細）、↑ ↓ 力度、空白鍵或 Enter 擊球、滑鼠滾輪調力度。</span>
-    </div></div>
-    <h3>簡化九球</h3>
-    <p>桌上有 1～9 號球。每一桿<b>必須先碰到桌上號碼最小的球</b>。把 9 號球打進袋就贏（開球或連桿中打進都算）；如果是犯規那一桿打進 9 號球，9 號球會放回置球點、不算贏。</p>
-    <h3>八號球（正式規則）</h3>
-    <ul>
-      <li>開球後，<b>第一個合法進袋的球</b>決定你的花色：全色球（1～7）或半色球（9～15），對手拿另一種。</li>
-      <li>開球要有球進袋，或至少有 4 顆球碰庫，否則犯規；這時對手可以選「接受現況」或「要求重擺重開」。</li>
-      <li>開球時 8 號球進袋：開球者可選「重擺重開」或「8 號球放回置球點繼續打」。</li>
-      <li>清完自己的花色後才能打 8 號球，而且要<b>先點選 8 號球要進的袋口</b>（金色虛線圈）。進了別的袋口、提早打進 8 號球、或犯規時打進 8 號球，都直接判負。</li>
-      <li>犯規時對手取得自由球，犯規那一桿進袋的球不會放回桌面。</li>
-    </ul>
-    <h3>14-1 連續進球</h3>
-    <p>每一桿都要<b>叫球</b>：先點要打的球，再點它要進的袋口（金色虛線圈）。叫的球進了指定袋口得 1 分，同一桿順便進袋的球也各得 1 分，而且可以繼續打；沒進指定袋口就不計分、進袋的球放回桌面並換手。覺得沒把握可以按<b>安全球</b>（先宣告，不計分也不扣分，換對手）。犯規扣 1 分、換手，對手取得自由球。先拿到 30 分獲勝。桌上只剩 1 顆球時，進袋的 14 顆會重新排成三角形（頂點空著），繼續打下去。開球不用叫球；幼幼班不用叫球也不扣分。</p>
-    <h3>哪些情況是犯規？</h3>
-    <ul><li>母球落袋</li><li>沒有碰到任何球</li><li>先碰到不該碰的球</li><li>碰球後沒有任何球進袋、也沒有任何球碰庫</li><li>線上對戰時回合超時</li></ul>
-    <p>犯規的處罰：換對手出桿，而且對手可以把母球放在桌面任何空位（自由球）。</p>
-    <h3>電腦強度</h3>
-    <p>幼幼班（袋口放大、不判犯規）、簡單、普通、困難、神話。強度越高，電腦越準、越會避免犯規和安排走位。另外有「自由練習」可以自己打球、沒有壓力。</p>
-    <h3>跟別人玩</h3>
-    <p>只能兩個人對戰，不能和電腦對打。可以建立房間、用邀請連結叫朋友進來；房間滿了後來的人會變成<b>觀戰者</b>（最多 20 人）。對局中如果斷線，<b>30 秒內重連</b>會回到原本的位置，超過就判負。</p>`;
+  /* 說明內容在 locales.js（help.body），由 data-i18n-html 套用 */
 
   /* ---------- 全域 ---------- */
   document.addEventListener('keydown', e => {
@@ -584,6 +553,23 @@
   $$('.screen .btn, .modal .btn').forEach(() => {});
   document.addEventListener('click', e => { if (e.target.closest('.btn') && !e.target.closest('.shoot')) Sound.sfx.click(); }, true);
 
+  /* 語言切換：只重繪文字，不重置對局狀態 */
+  root.I18N.onChange(() => {
+    renderHomeStats();
+    if (App.screen === 'setup') refreshSetup();
+    if (!$('#settingsModal').classList.contains('hidden')) {
+      buildSettings();
+      const cur = document.querySelector('#setBody [data-k="_lang"] .seg-b[aria-checked="true"]'); if (cur) cur.focus();
+    }
+    syncCueModes();
+    Latency.refresh();
+    if (App.game) App.game.relocalize();
+    else $('#btnShoot').textContent = T('ctl.shoot');
+    const rm = root.PoolLobby && root.PoolLobby.room; if (rm && App.updateRematch) App.updateRematch(rm);
+    if (root.PoolLobby && root.PoolLobby.relocalize) root.PoolLobby.relocalize();
+  });
+  /* 設定鈕旁的語言切換鈕：每個畫面的設定鈕各一顆，狀態由 I18N 同步 */
+  $$('#homeGear, [data-gear]').forEach(g => root.I18N.mountToggle({ after: g, id: 'b-lang-' + (g.id || (g.closest('.screen') || {}).id || 'x'), className: 'btn round' }));
   applySettings();
   renderHomeStats();
   App.show('home');

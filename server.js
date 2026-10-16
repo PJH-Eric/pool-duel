@@ -128,7 +128,7 @@ ws.attach(server, {
         proto.handle(person, msg);
       } catch (e) {
         console.error('[proto] ' + (msg && msg.type) + ' 出錯：', e && e.stack || e);
-        io.send(person.id, { type: 'error', text: '伺服器處理這個動作時出錯了' });
+        io.send(person.id, { type: 'error', text: 'err.server' });
       }
     });
 

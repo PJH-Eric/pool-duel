@@ -86,7 +86,7 @@ function client(port, name, cid) {
   const bad = client(port, '路人', 'client-xxxxxxxx'); await bad.open(); await bad.wait('welcome');
   bad.send({ type: 'invite:resolve', token: 'nope' });
   const be = await bad.wait('error');
-  ok(be && /無效|撤銷/.test(be.text), '無效邀請有可理解的提示');
+  ok(be && be.text === 'err.inviteInvalid', '無效邀請有可理解的提示');
   A.send({ type: 'chat', text: '大家好' });
   await sleep(150);
   ok(S.room && S.room.chat.some(c => c.text === '大家好'), '聊天觀戰者看得到');
@@ -120,7 +120,7 @@ function client(port, name, cid) {
   const wrongShotFrom = other.msgs.length;
   other.send({ type: 'shot', shot: { ax: 1000000, ay: 0, power: 500 } });
   const er = await other.wait('error', 3000, wrongShotFrom);
-  ok(er && /還沒輪到/.test(er.text), '還沒輪到的人出桿被拒');
+  ok(er && er.text === 'err.notYourTurn', '還沒輪到的人出桿被拒');
   const rng = RNG.create('t');
   const pick = AI.chooseShot(st, 'normal', rng);
   const from = shooter.msgs.length;

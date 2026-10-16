@@ -1,10 +1,11 @@
 <!doctype html>
-<html lang="zh-Hant">
+<html lang="zh-Hant" data-i18n-title="meta.title">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#120a07">
 <title>撞球對決</title>
+<meta name="description" content="撞球對決：簡化九球、八號球、14-1 連續進球，單機對電腦與線上 1 對 1（含觀戰）" data-i18n-content="meta.desc">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23151515'/%3E%3Ccircle cx='32' cy='32' r='14' fill='%23f6f1e4'/%3E%3Ctext x='32' y='39' font-size='20' text-anchor='middle' font-family='sans-serif' font-weight='700'%3E8%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/latency.css">
@@ -13,73 +14,73 @@
 <div id="app">
 
   <!-- ============ 首頁 ============ -->
-  <section id="screen-home" class="screen active" aria-label="首頁">
+  <section id="screen-home" class="screen active" aria-label="首頁" data-i18n-attr="aria-label=screen.home">
     <canvas id="heroCanvas" aria-hidden="true"></canvas>
     <div class="hero-shade"></div>
-    <a id="btnLobby" class="lobby-pill" href="#" aria-label="返回遊戲大廳" hidden><span class="ico ico-back"></span><span class="lobby-pill-text">遊戲大廳</span></a>
-    <button id="homeGear" class="btn round gear" aria-label="設定"><span class="ico ico-gear"></span></button>
+    <a id="btnLobby" class="lobby-pill" href="#" aria-label="返回遊戲大廳" data-i18n-attr="aria-label=nav.lobbyAria" hidden><span class="ico ico-back"></span><span class="lobby-pill-text" data-i18n="nav.lobby">遊戲大廳</span></a>
+    <div class="home-tools"><button id="homeGear" class="btn round gear" aria-label="設定" data-i18n-attr="aria-label=common.settings;title=common.settings"><span class="ico ico-gear"></span></button></div>
     <div class="hero-body">
-      <div class="hero-eyebrow">POOL DUEL</div>
-      <h1 class="hero-title">撞球對決</h1>
-      <p class="hero-sub">簡化九球 ・ 八號球 ・ 14-1 連續進球</p>
+      <div class="hero-eyebrow" data-i18n="menu.eyebrow">POOL DUEL</div>
+      <h1 class="hero-title" data-i18n="menu.title">撞球對決</h1>
+      <p class="hero-sub" data-i18n="menu.sub">簡化九球 ・ 八號球 ・ 14-1 連續進球</p>
       <div class="hero-menu">
-        <button id="btnSolo" class="btn gold big">一個人玩</button>
-        <button id="btnOnline" class="btn big">跟別人玩</button>
-        <button id="btnHelp" class="btn big ghost">怎麼玩</button>
+        <button id="btnSolo" class="btn gold big" data-i18n="menu.solo">一個人玩</button>
+        <button id="btnOnline" class="btn big" data-i18n="menu.online">跟別人玩</button>
+        <button id="btnHelp" class="btn big ghost" data-i18n="menu.help">怎麼玩</button>
       </div>
       <p id="homeStats" class="hero-stats"></p>
     </div>
   </section>
 
   <!-- ============ 單機設定 ============ -->
-  <section id="screen-setup" class="screen" aria-label="單機設定">
-    <header class="bar"><button class="btn round back" data-back="home" aria-label="返回"><span class="ico ico-back"></span></button><h2>一個人玩</h2><button class="btn round gear" data-gear aria-label="設定"><span class="ico ico-gear"></span></button></header>
+  <section id="screen-setup" class="screen" aria-label="單機設定" data-i18n-attr="aria-label=screen.setup">
+    <header class="bar"><button class="btn round back" data-back="home" aria-label="返回" data-i18n-attr="aria-label=common.back"><span class="ico ico-back"></span></button><h2 data-i18n="setup.title">一個人玩</h2><div class="bar-right"><button class="btn round gear" data-gear aria-label="設定" data-i18n-attr="aria-label=common.settings;title=common.settings"><span class="ico ico-gear"></span></button></div></header>
     <div class="scroll"><div class="sheet">
-      <h3 class="sec">選規則</h3>
-      <div id="kindCards" class="cards" role="radiogroup" aria-label="規則"></div>
-      <h3 class="sec">玩法</h3>
-      <div id="modeSeg" class="seg" role="radiogroup" aria-label="玩法">
-        <button class="seg-b" data-v="ai" role="radio">對電腦</button>
-        <button class="seg-b" data-v="practice" role="radio">自由練習</button>
+      <h3 class="sec" data-i18n="setup.rule">選規則</h3>
+      <div id="kindCards" class="cards" role="radiogroup" aria-label="規則" data-i18n-attr="aria-label=setup.ruleAria"></div>
+      <h3 class="sec" data-i18n="setup.mode">玩法</h3>
+      <div id="modeSeg" class="seg" role="radiogroup" aria-label="玩法" data-i18n-attr="aria-label=setup.mode">
+        <button class="seg-b" data-v="ai" role="radio" data-i18n="setup.vsAi">對電腦</button>
+        <button class="seg-b" data-v="practice" role="radio" data-i18n="setup.practice">自由練習</button>
       </div>
       <div id="levelBox">
-        <h3 class="sec">電腦強度</h3>
-        <div id="levelSeg" class="seg four" role="radiogroup" aria-label="電腦強度"></div>
+        <h3 class="sec" data-i18n="setup.level">電腦強度</h3>
+        <div id="levelSeg" class="seg four" role="radiogroup" aria-label="電腦強度" data-i18n-attr="aria-label=setup.level"></div>
         <p id="levelNote" class="note"></p>
       </div>
-      <p id="practiceNote" class="note hidden">自由練習：沒有對手、不判犯規，打完的球會自動重新擺。適合先熟悉手感。</p>
-      <div class="actions"><button id="btnStartSolo" class="btn gold big">開始</button></div>
+      <p id="practiceNote" class="note hidden" data-i18n="setup.practiceNote">自由練習：沒有對手、不判犯規，打完的球會自動重新擺。適合先熟悉手感。</p>
+      <div class="actions"><button id="btnStartSolo" class="btn gold big" data-i18n="setup.start">開始</button></div>
     </div></div>
   </section>
 
   <!-- ============ 線上大廳 ============ -->
-  <section id="screen-lobby" class="screen" aria-label="線上大廳">
-    <header class="bar"><button class="btn round back" data-back="home" aria-label="返回"><span class="ico ico-back"></span></button><h2>跟別人玩</h2><div class="bar-right"><span class="lat-slot"></span><button class="btn round gear" data-gear aria-label="設定"><span class="ico ico-gear"></span></button></div></header>
+  <section id="screen-lobby" class="screen" aria-label="線上大廳" data-i18n-attr="aria-label=screen.lobby">
+    <header class="bar"><button class="btn round back" data-back="home" aria-label="返回" data-i18n-attr="aria-label=common.back"><span class="ico ico-back"></span></button><h2 data-i18n="lobby.title">跟別人玩</h2><div class="bar-right"><span class="lat-slot"></span><button class="btn round gear" data-gear aria-label="設定" data-i18n-attr="aria-label=common.settings;title=common.settings"><span class="ico ico-gear"></span></button></div></header>
     <div class="scroll"><div class="sheet wide">
       <div id="lobbyStatus" class="status-pill"></div>
       <div id="inviteLanding" class="card hidden"></div>
       <div class="row nick-row">
-        <label for="nickInput" class="lbl">暱稱</label>
-        <input id="nickInput" class="field" maxlength="8" autocomplete="off" placeholder="你的暱稱">
-        <button id="btnNickRandom" class="btn small" type="button">換一個</button>
+        <label for="nickInput" class="lbl" data-i18n="lobby.nick">暱稱</label>
+        <input id="nickInput" class="field" maxlength="12" autocomplete="off" placeholder="你的暱稱" data-i18n-attr="placeholder=lobby.nickPh">
+        <button id="btnNickRandom" class="btn small" type="button" data-i18n="lobby.nickRandom">換一個</button>
       </div>
       <div class="row wrap">
-        <button id="btnQuick" class="btn gold big grow">快速加入</button>
-        <button id="btnCreateToggle" class="btn big grow">建立房間</button>
+        <button id="btnQuick" class="btn gold big grow" data-i18n="lobby.quick">快速加入</button>
+        <button id="btnCreateToggle" class="btn big grow" data-i18n="lobby.create">建立房間</button>
       </div>
       <div id="createBox" class="card hidden">
-        <h3 class="sec tight">房間設定</h3>
+        <h3 class="sec tight" data-i18n="lobby.roomSettings">房間設定</h3>
         <div class="form-grid" id="createForm"></div>
-        <div class="actions"><button id="btnCreate" class="btn gold">開房間</button></div>
+        <div class="actions"><button id="btnCreate" class="btn gold" data-i18n="lobby.open">開房間</button></div>
       </div>
-      <h3 class="sec">公開房間</h3>
+      <h3 class="sec" data-i18n="lobby.publicRooms">公開房間</h3>
       <div id="roomList" class="room-list" aria-live="polite"></div>
     </div></div>
   </section>
 
   <!-- ============ 房間 ============ -->
-  <section id="screen-room" class="screen" aria-label="房間">
-    <header class="bar"><button class="btn round back" id="roomBack" aria-label="離開房間"><span class="ico ico-back"></span></button><h2 id="roomTitle">房間</h2><div class="bar-right"><span class="lat-slot"></span><button class="btn round gear" data-gear aria-label="設定"><span class="ico ico-gear"></span></button></div></header>
+  <section id="screen-room" class="screen" aria-label="房間" data-i18n-attr="aria-label=screen.room">
+    <header class="bar"><button class="btn round back" id="roomBack" aria-label="離開房間" data-i18n-attr="aria-label=room.leaveAria"><span class="ico ico-back"></span></button><h2 id="roomTitle" data-i18n="room.title">房間</h2><div class="bar-right"><span class="lat-slot"></span><button class="btn round gear" data-gear aria-label="設定" data-i18n-attr="aria-label=common.settings;title=common.settings"><span class="ico ico-gear"></span></button></div></header>
     <div class="scroll"><div class="sheet wide room-grid">
       <div class="col">
         <div id="roomDc" class="status-pill warn hidden"></div>
@@ -87,56 +88,56 @@
         <div id="roomCfg" class="card"></div>
         <div id="inviteBox" class="card"></div>
         <div class="actions row wrap">
-          <button id="btnTakeSeat" class="btn hidden">搶位入座</button>
-          <button id="btnReady" class="btn green hidden">準備好</button>
-          <button id="btnStartRoom" class="btn gold hidden">開始對局</button>
+          <button id="btnTakeSeat" class="btn hidden" data-i18n="room.takeSeat">搶位入座</button>
+          <button id="btnReady" class="btn green hidden" data-i18n="room.ready">準備好</button>
+          <button id="btnStartRoom" class="btn gold hidden" data-i18n="room.start">開始對局</button>
         </div>
         <p id="roomHint" class="note"></p>
       </div>
       <div class="col">
-        <div class="card"><h3 class="sec tight">觀戰席 <span id="specCount" class="badge"></span></h3><div id="specList" class="spec-list"></div></div>
-        <div class="card chat-card"><h3 class="sec tight">聊天室</h3><div id="roomChat" class="chat-log" aria-live="polite"></div>
+        <div class="card"><h3 class="sec tight"><span data-i18n="room.spectators">觀戰席</span> <span id="specCount" class="badge"></span></h3><div id="specList" class="spec-list"></div></div>
+        <div class="card chat-card"><h3 class="sec tight" data-i18n="chat.title">聊天室</h3><div id="roomChat" class="chat-log" aria-live="polite"></div>
           <div class="quick" data-quick></div>
-          <form class="chat-form" data-chatform><input class="field" maxlength="60" placeholder="輸入訊息…" aria-label="聊天訊息"><button class="btn small gold" type="submit">送出</button></form>
+          <form class="chat-form" data-chatform><input class="field" maxlength="60" placeholder="輸入訊息…" aria-label="聊天訊息" data-i18n-attr="placeholder=chat.placeholder;aria-label=chat.messageAria"><button class="btn small gold" type="submit" data-i18n="chat.send">送出</button></form>
         </div>
       </div>
     </div></div>
   </section>
 
   <!-- ============ 遊戲中 ============ -->
-  <section id="screen-game" class="screen" aria-label="對局">
+  <section id="screen-game" class="screen" aria-label="對局" data-i18n-attr="aria-label=screen.game">
     <header class="g-top">
-      <button id="gBack" class="btn round back" aria-label="離開對局"><span class="ico ico-back"></span></button>
-      <div class="bar-right"><span class="lat-slot"></span><button class="btn round gear" data-gear aria-label="設定"><span class="ico ico-gear"></span></button></div>
+      <button id="gBack" class="btn round back" aria-label="離開對局" data-i18n-attr="aria-label=game.leaveAria"><span class="ico ico-back"></span></button>
+      <div class="bar-right"><span class="lat-slot"></span><button class="btn round gear" data-gear aria-label="設定" data-i18n-attr="aria-label=common.settings;title=common.settings"><span class="ico ico-gear"></span></button></div>
     </header>
-    <div class="g-scoreboard" role="group" aria-label="對局比分與球況">
-      <div id="gSeats" class="seat-list" role="group" aria-label="玩家進袋紀錄"></div>
-      <div class="g-score-center"><div class="timer" id="gTimerWrap"><span class="lbl">倒數</span><span id="gTimer" class="timer-dot">--</span></div><button id="btnExtend" class="btn small gold extend-time" type="button" aria-label="延長回合 25 秒；每位玩家每盤一次" title="延長 25 秒，每位玩家每盤一次" disabled>+25</button></div>
-      <div class="g-score-meta"><div id="gStatus" class="g-status" role="status" aria-live="polite">準備中…</div><div id="gSpec" class="spec-note hidden"></div></div>
+    <div class="g-scoreboard" role="group" aria-label="對局比分與球況" data-i18n-attr="aria-label=hud.scoreAria">
+      <div id="gSeats" class="seat-list" role="group" aria-label="玩家進袋紀錄" data-i18n-attr="aria-label=hud.seatsAria"></div>
+      <div class="g-score-center"><div class="timer" id="gTimerWrap"><span class="lbl" data-i18n="hud.timer">倒數</span><span id="gTimer" class="timer-dot">--</span></div><button id="btnExtend" class="btn small gold extend-time" type="button" aria-label="延長回合 25 秒；每位玩家每盤一次" title="延長 25 秒，每位玩家每盤一次" data-i18n-attr="aria-label=hud.extendAria;title=hud.extendTitle" disabled>+25</button></div>
+      <div class="g-score-meta"><div id="gStatus" class="g-status" role="status" aria-live="polite" data-i18n="hud.preparing">準備中…</div><div id="gSpec" class="spec-note hidden"></div></div>
     </div>
     <div class="g-main">
-      <aside id="gPanel" class="panel chat-panel hidden" aria-label="聊天室資訊欄" aria-hidden="true">
-        <div class="panel-head"><h3 class="sec tight">聊天室 <span id="gUnread" class="badge hidden">0</span></h3><button id="gPanelClose" class="btn round small drawer-close" aria-label="關閉聊天室">×</button></div>
+      <aside id="gPanel" class="panel chat-panel hidden" aria-label="聊天室資訊欄" data-i18n-attr="aria-label=chat.panelAria" aria-hidden="true">
+        <div class="panel-head"><h3 class="sec tight"><span data-i18n="chat.title">聊天室</span> <span id="gUnread" class="badge hidden">0</span></h3><button id="gPanelClose" class="btn round small drawer-close" aria-label="關閉聊天室" data-i18n-attr="aria-label=chat.closeAria">×</button></div>
         <div id="gChatBox" class="chat-card hidden">
           <div id="gChat" class="chat-log" aria-live="polite"></div>
           <div class="quick" data-quick></div>
-          <form class="chat-form" data-chatform><input class="field" maxlength="60" placeholder="輸入訊息…" aria-label="聊天訊息"><button class="btn small gold" type="submit">送出</button></form>
+          <form class="chat-form" data-chatform><input class="field" maxlength="60" placeholder="輸入訊息…" aria-label="聊天訊息" data-i18n-attr="placeholder=chat.placeholder;aria-label=chat.messageAria"><button class="btn small gold" type="submit" data-i18n="chat.send">送出</button></form>
         </div>
       </aside>
-      <div class="stage"><canvas id="gCanvas" aria-label="球桌（拖曳畫面調整瞄準方向）"></canvas>
-        <button id="gDrawer" class="btn round drawer-btn hidden" aria-label="開啟聊天室" aria-controls="gPanel" aria-expanded="false">☰<span id="gDrawerBadge" class="dot hidden"></span></button>
+      <div class="stage"><canvas id="gCanvas" aria-label="球桌（拖曳畫面調整瞄準方向）" data-i18n-attr="aria-label=game.canvasAria"></canvas>
+        <button id="gDrawer" class="btn round drawer-btn hidden" aria-label="開啟聊天室" data-i18n-attr="aria-label=chat.openAria" aria-controls="gPanel" aria-expanded="false">☰<span id="gDrawerBadge" class="dot hidden"></span></button>
         <div id="dcBanner" class="dc-banner hidden"></div>
-        <button id="btnRack" class="btn small rack-btn hidden">重新擺球</button>
-        <button id="btnSafety" class="btn small safety-btn hidden" aria-pressed="false" title="宣告安全球：不用叫球，這桿不計分也不扣分">安全球</button>
+        <button id="btnRack" class="btn small rack-btn hidden" data-i18n="game.rerack">重新擺球</button>
+        <button id="btnSafety" class="btn small safety-btn hidden" aria-pressed="false" title="宣告安全球：不用叫球，這桿不計分也不扣分" data-i18n-attr="title=game.safetyTitle" data-i18n="game.safety">安全球</button>
       </div>
     </div>
     <footer id="gControls" class="g-controls">
-      <div class="ctl spin-ctl"><button id="spinBtn" class="spin-chip" aria-expanded="false" aria-controls="spinPop"><span id="spinMini" class="spin-mini"><i></i></span><span class="lbl">擊球點</span></button>
-        <div id="cueModes" class="cue-modes" role="group" aria-label="出桿方式"><button type="button" data-mode="follow" title="推桿：打偏上，碰球後母球往前追（快鍵 1）">推桿</button><button type="button" data-mode="stop" title="定桿：正撞後母球停在原地（快鍵 2）">定桿</button><button type="button" data-mode="draw" title="拉桿：打偏下，碰球後母球往回縮（快鍵 3）">拉桿</button><button type="button" data-mode="jump" title="跳桿：母球飛過擋路的球再落地（快鍵 4）">跳桿</button></div>
-        <div id="spinPop" class="spin-pop hidden" role="dialog" aria-label="擊球點"><div id="spinBall" class="spin-ball" tabindex="0" role="slider" aria-label="擊球點位置"><i id="spinDot"></i></div><div class="spin-tip">點母球選擊球位置<br>上＝追球 下＝縮球 左右＝側旋</div><button id="spinReset" class="btn small" type="button">置中</button></div></div>
-      <div class="ctl fine-ctl"><div class="ctl-head"><span class="lbl">微調角度</span><span id="fineVal" class="val">0.0°</span></div><div id="fineSlider" class="slider" role="slider" aria-label="微調角度" aria-valuemin="-4" aria-valuemax="4" aria-valuenow="0" tabindex="0"><div class="ticks"></div><div class="knob"></div></div></div>
-      <div class="ctl power-ctl"><div class="ctl-head"><span class="lbl">力度</span><span id="powerVal" class="val">50%</span></div><div id="powerSlider" class="slider power" role="slider" aria-label="力度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" tabindex="0"><div class="fill"></div><div class="knob"></div></div></div>
-      <button id="btnShoot" class="btn gold shoot" disabled>擊 球</button>
+      <div class="ctl spin-ctl"><button id="spinBtn" class="spin-chip" aria-expanded="false" aria-controls="spinPop"><span id="spinMini" class="spin-mini"><i></i></span><span class="lbl" data-i18n="ctl.spin">擊球點</span></button>
+        <div id="cueModes" class="cue-modes" role="group" aria-label="出桿方式" data-i18n-attr="aria-label=ctl.modesAria"><button type="button" data-mode="follow" title="推桿：打偏上，碰球後母球往前追（快鍵 1）" data-i18n-attr="title=mode.followTip" data-i18n="mode.follow">推桿</button><button type="button" data-mode="stop" title="定桿：正撞後母球停在原地（快鍵 2）" data-i18n-attr="title=mode.stopTip" data-i18n="mode.stop">定桿</button><button type="button" data-mode="draw" title="拉桿：打偏下，碰球後母球往回縮（快鍵 3）" data-i18n-attr="title=mode.drawTip" data-i18n="mode.draw">拉桿</button><button type="button" data-mode="jump" title="跳桿：母球飛過擋路的球再落地（快鍵 4）" data-i18n-attr="title=mode.jumpTip" data-i18n="mode.jump">跳桿</button></div>
+        <div id="spinPop" class="spin-pop hidden" role="dialog" aria-label="擊球點" data-i18n-attr="aria-label=ctl.spin"><div id="spinBall" class="spin-ball" tabindex="0" role="slider" aria-label="擊球點位置" data-i18n-attr="aria-label=ctl.spinPos"><i id="spinDot"></i></div><div class="spin-tip" data-i18n-html="ctl.spinTip">點母球選擊球位置<br>上＝追球 下＝縮球 左右＝側旋</div><button id="spinReset" class="btn small" type="button" data-i18n="ctl.center">置中</button></div></div>
+      <div class="ctl fine-ctl"><div class="ctl-head"><span class="lbl" data-i18n="ctl.fine">微調角度</span><span id="fineVal" class="val">0.0°</span></div><div id="fineSlider" class="slider" role="slider" aria-label="微調角度" data-i18n-attr="aria-label=ctl.fine" aria-valuemin="-4" aria-valuemax="4" aria-valuenow="0" tabindex="0"><div class="ticks"></div><div class="knob"></div></div></div>
+      <div class="ctl power-ctl"><div class="ctl-head"><span class="lbl" data-i18n="ctl.power">力度</span><span id="powerVal" class="val">50%</span></div><div id="powerSlider" class="slider power" role="slider" aria-label="力度" data-i18n-attr="aria-label=ctl.power" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" tabindex="0"><div class="fill"></div><div class="knob"></div></div></div>
+      <button id="btnShoot" class="btn gold shoot" data-i18n="ctl.shoot" disabled>擊 球</button>
     </footer>
 
     <div id="resultOverlay" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="resTitle">
@@ -146,36 +147,38 @@
         <p id="resReason" class="res-reason"></p>
         <div id="resStats" class="res-stats"></div>
         <p id="resNote" class="note"></p>
-        <div class="res-actions"><button id="resAgain" class="btn gold">再來一局</button><button id="resRoom" class="btn">回到房間</button><button id="resHome" class="btn ghost">回到首頁</button></div>
+        <div class="res-actions"><button id="resAgain" class="btn gold" data-i18n="res.again">再來一局</button><button id="resRoom" class="btn" data-i18n="res.room">回到房間</button><button id="resHome" class="btn ghost" data-i18n="res.home">回到首頁</button></div>
       </div>
     </div>
     <div id="choiceOverlay" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="chTitle">
       <div class="result-card choice-card"><h2 id="chTitle" class="res-title"></h2><p id="chDesc" class="res-reason"></p><div id="chOpts" class="choice-opts"></div><p id="chTimer" class="note"></p></div>
     </div>
-    <div id="reconnectOverlay" class="overlay hidden" role="alertdialog" aria-modal="true"><div class="result-card"><h2 class="res-title">連線中斷</h2><p id="reconnectText" class="res-reason">正在重新連線…</p><div class="spinner"></div></div></div>
+    <div id="reconnectOverlay" class="overlay hidden" role="alertdialog" aria-modal="true"><div class="result-card"><h2 class="res-title" data-i18n="net.dropTitle">連線中斷</h2><p id="reconnectText" class="res-reason" data-i18n="net.reconnecting">正在重新連線…</p><div class="spinner"></div></div></div>
   </section>
 
   <!-- ============ 說明 ============ -->
-  <section id="screen-help" class="screen" aria-label="怎麼玩">
-    <header class="bar"><button class="btn round back" data-back="home" aria-label="返回"><span class="ico ico-back"></span></button><h2>怎麼玩</h2><button class="btn round gear" data-gear aria-label="設定"><span class="ico ico-gear"></span></button></header>
-    <div class="scroll"><div id="helpBody" class="sheet help"></div></div>
+  <section id="screen-help" class="screen" aria-label="怎麼玩" data-i18n-attr="aria-label=help.title">
+    <header class="bar"><button class="btn round back" data-back="home" aria-label="返回" data-i18n-attr="aria-label=common.back"><span class="ico ico-back"></span></button><h2 data-i18n="help.title">怎麼玩</h2><div class="bar-right"><button class="btn round gear" data-gear aria-label="設定" data-i18n-attr="aria-label=common.settings;title=common.settings"><span class="ico ico-gear"></span></button></div></header>
+    <div class="scroll"><div id="helpBody" class="sheet help" data-i18n-html="help.body"></div></div>
   </section>
 
   <!-- ============ 設定 ============ -->
   <div id="settingsModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="setTitle">
     <div class="modal-card">
-      <div class="modal-head"><h2 id="setTitle">設定</h2><button id="setClose" class="btn round small" aria-label="關閉">×</button></div>
+      <div class="modal-head"><h2 id="setTitle" data-i18n="set.title">設定</h2><button id="setClose" class="btn round small" aria-label="關閉" data-i18n-attr="aria-label=common.close">×</button></div>
       <div id="setBody" class="modal-body"></div>
-      <div class="modal-foot"><button id="setReset" class="btn ghost small">恢復預設</button><button id="setDone" class="btn gold small">完成</button></div>
+      <div class="modal-foot"><button id="setReset" class="btn ghost small" data-i18n="set.reset">恢復預設</button><button id="setDone" class="btn gold small" data-i18n="common.done">完成</button></div>
     </div>
   </div>
 
   <div id="confirmModal" class="modal hidden" role="alertdialog" aria-modal="true" aria-labelledby="cfTitle">
-    <div class="modal-card small"><div class="modal-head"><h2 id="cfTitle">確定嗎？</h2></div><p id="cfText" class="modal-text"></p><div class="modal-foot"><button id="cfNo" class="btn small">取消</button><button id="cfYes" class="btn gold small">確定</button></div></div>
+    <div class="modal-card small"><div class="modal-head"><h2 id="cfTitle" data-i18n="confirm.title">確定嗎？</h2></div><p id="cfText" class="modal-text"></p><div class="modal-foot"><button id="cfNo" class="btn small" data-i18n="common.cancel">取消</button><button id="cfYes" class="btn gold small" data-i18n="common.ok">確定</button></div></div>
   </div>
   <div id="globalToast" class="global-toast" role="status" aria-live="polite"></div>
 </div>
 
+<script src="js/i18n.js"></script>
+<script src="js/locales.js"></script>
 <script src="js/config.js"></script>
 <script src="js/turn-config.js"></script>
 <script src="js/rng.js"></script>
