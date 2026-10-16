@@ -2,6 +2,8 @@
    執行：node tests/verify.js            （快速套件）
          npm test                         （所有檢查，含 4 場 AI 對局，限時 3 分鐘）*/
 'use strict';
+
+require('./seo.js');
 const path = require('path');
 const { spawnSync } = require('child_process');
 const D = path.join(__dirname, '..', 'public', 'js') + path.sep;

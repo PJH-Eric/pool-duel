@@ -279,6 +279,7 @@
     $('#gPanel').classList.add('hidden'); $('#gDrawer').classList.add('hidden');
     $('#btnRack').classList.toggle('hidden', cfg.mode !== 'practice');
     g.practiceCount = 0;
+    GameAnalytics.start({ mode: cfg.mode, difficulty: cfg.level, players: cfg.mode === 'practice' ? 1 : 2 });
     g.start({ mode: cfg.mode, kind: cfg.kind, level: cfg.mode === 'practice' ? 'kids' : cfg.level, mySeat: 0, seats, bigPockets: cfg.level === 'kids' });
     applySettings();
     resetDrawer();
@@ -290,6 +291,7 @@
     $('#gChatBox').classList.remove('hidden');
     $('#gPanel').classList.remove('hidden'); $('#gDrawer').classList.remove('hidden');
     const me = room.youSeat;
+    if (me >= 0) GameAnalytics.start({ mode: 'online', players: 2 });
     g.start({ mode: 'online', kind: gameMsg.kind, mySeat: me, state: gameMsg.state, seats: gameMsg.seats.map(s => ({ name: s.name })), cues: gameMsg.seats.map(s => s.cue), aimMode: gameMsg.cfg.aim, net: root.Net, turnMs: gameMsg.turnMs, extensionUsed: gameMsg.extensionUsed, bigPockets: gameMsg.cfg.pockets === 'big' });
     $('#gSpec').classList.toggle('hidden', me >= 0);
     $('#gSpec').textContent = T('game.specNote');
@@ -478,6 +480,7 @@
   function showResult(vm) {
     const ov = $('#resultOverlay');
     if (!vm) { ov.classList.add('hidden'); return; }
+    if (!vm.spectator) GameAnalytics.end({ result: vm.draw ? 'draw' : (vm.youWin ? 'win' : 'lose') });
     const online = vm.mode === 'online', wasHidden = ov.classList.contains('hidden');
     let title;
     if (vm.draw) title = T('res.draw'); else if (vm.spectator) title = T('res.specWin', { name: vm.names[vm.winner] }); else title = vm.youWin ? T('res.youWin') : T('res.youLose');

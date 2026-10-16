@@ -11,8 +11,8 @@
     'common.settings': '設定', 'common.gotIt': '知道了', 'common.sep': '、', 'common.dot': ' ・ ', 'common.comma': '，',
     'confirm.title': '確定嗎？',
     'lang.switchTo': '切換成 English',
-    'meta.title': '撞球對決',
-    'meta.desc': '撞球對決：簡化九球、八號球、14-1 連續進球，單機對電腦與線上 1 對 1（含觀戰）',
+    'meta.title': "撞球對決｜免費線上雙人撞球・免下載",
+    'meta.desc': "免費線上撞球對決，支援簡化九球、八號球與連續進球玩法，拖曳瞄準、調整力道再出桿。可單機練習、挑戰電腦或邀朋友雙人對戰，支援觀戰，免下載，手機平板也能打撞球。",
     'screen.home': '首頁', 'screen.setup': '單機設定', 'screen.lobby': '線上大廳', 'screen.room': '房間', 'screen.game': '對局',
     'nav.lobby': '遊戲大廳', 'nav.lobbyAria': '返回遊戲大廳',
 
