@@ -55,7 +55,7 @@ Pages 部署後會自動讀取線上的 `version.json`，比對本次 commit SHA
 ## 目錄
 
 ```
-server.js            HTTP 靜態檔 + /health /api/presence /api/rooms + WebSocket /ws
+server.js            HTTP 靜態檔 + /health /api/rooms + WebSocket /ws
 lib/                 ws.js、protocol.js、rooms.js、match-loop.js
 public/              index.html、css/、js/（physics、rules、ai、render、game、online、lobby、app…）
 tests/               verify.js、online-check.js

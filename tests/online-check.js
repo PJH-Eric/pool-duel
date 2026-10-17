@@ -45,12 +45,9 @@ function client(port, name, cid) {
   const port = srv.server.address().port;
   console.log('伺服器埠 ' + port);
 
-  console.log('● 基本：健康檢查與在線人數');
+  console.log('● 基本：健康檢查');
   const h = await (await fetch('http://127.0.0.1:' + port + '/health')).json();
   ok(h.ok && h.game === 'pool-duel', '/health 回應');
-  const pr = await (await fetch('http://127.0.0.1:' + port + '/api/presence')).json();
-  ok(pr.gameId === 'pool-duel' && typeof pr.online === 'number', '/api/presence 回應');
-
   console.log('● 開房、加入、準備、開始');
   const A = client(port, '小明', 'client-aaaaaaaa'), B = client(port, '小華', 'client-bbbbbbbb');
   await A.open(); await B.open();
