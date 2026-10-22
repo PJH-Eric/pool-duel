@@ -6,5 +6,8 @@
   "lobbyUrl": "https://pjh-eric.github.io/game-lobby/",
   "googleSiteVerification": "",
   "genre": "運動",
-  "players": "1-2"
+  "players": "1-2",
+  "iconUrl": "https://pjh-eric.github.io/pool-duel/favicon-96.png",
+  "ogImage": "https://pjh-eric.github.io/pool-duel/og-image.png",
+  "ogImageAlt": "撞球對決遊戲圖示"
 }
