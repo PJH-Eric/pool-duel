@@ -291,7 +291,8 @@
     $('#gChatBox').classList.remove('hidden');
     $('#gPanel').classList.remove('hidden'); $('#gDrawer').classList.remove('hidden');
     const me = room.youSeat;
-    if (me >= 0) GameAnalytics.start({ mode: 'online', players: 2 });
+    if (me >= 0) GameAnalytics.start({ mode: 'online', players: 2 },
+      gameMsg.roundId == null ? undefined : room.id + '|' + gameMsg.roundId);
     g.start({ mode: 'online', kind: gameMsg.kind, mySeat: me, state: gameMsg.state, seats: gameMsg.seats.map(s => ({ name: s.name })), cues: gameMsg.seats.map(s => s.cue), aimMode: gameMsg.cfg.aim, net: root.Net, turnMs: gameMsg.turnMs, extensionUsed: gameMsg.extensionUsed, bigPockets: gameMsg.cfg.pockets === 'big' });
     $('#gSpec').classList.toggle('hidden', me >= 0);
     $('#gSpec').textContent = T('game.specNote');

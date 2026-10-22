@@ -5,13 +5,14 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node tests/localization.js && node scripts/verify-parallel.js",
+    "test": "node tests/analytics.js && node tests/localization.js && node scripts/verify-parallel.js",
     "test:pockets": "node tests/pocket-check.js",
     "verify": "node scripts/verify-parallel.js",
     "verify:full": "node scripts/verify-parallel.js --full",
     "test:online": "node tests/online-check.js",
     "inject": "node scripts/inject-server-url.js",
-    "test:localization": "node tests/localization.js"
+    "test:localization": "node tests/localization.js",
+    "test:analytics": "node tests/analytics.js"
   },
   "engines": {
     "node": ">=18"

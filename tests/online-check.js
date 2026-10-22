@@ -66,6 +66,8 @@ function client(port, name, cid) {
   await sleep(150);
   A.send({ type: 'start' });
   const g = await B.wait('game');
+  const firstRoundId = g && g.game.roundId;
+  ok(Number.isInteger(firstRoundId), '開局提供穩定的對局識別');
   ok(g && g.game.state.kind === 'eight' && g.game.state.balls.length === 16 && g.game.state.bigPockets, '開局：球擺好、加大袋口');
   ok(g && g.game.turnMs >= 34500 && g.game.turnMs <= 35000 && g.game.extensionUsed.every(x => !x), '線上開局倒數 35 秒且每盤延長次數重置');
 
@@ -164,6 +166,7 @@ function client(port, name, cid) {
   const g2 = await A.wait('game', 3000, A.msgs.length);
   await sleep(100);
   ok(A.state.phase === 'play' && A.state.breaker !== firstBreaker && A.state.shotNo === 0 && g2 && g2.game.extensionUsed.every(x => !x), '雙方同意：新局開始、開球權互換並重置延長');
+  ok(g2 && g2.game.roundId > firstRoundId, '相同擺球種子重玩仍有不同對局識別');
 
   console.log('● 斷線 30 秒保留與重連');
   const bId = B.room.members.find(m => m.name === '小華').id;
@@ -172,6 +175,7 @@ function client(port, name, cid) {
   const B2 = client(port, '小華', 'client-bbbbbbbb'); await B2.open();
   const rj = await B2.wait('joined');
   ok(rj && rj.rejoined && rj.role === 'player' && B2.game && B2.game.state.balls.length === 16, '同一個瀏覽器分頁重連：回到原席位並補送局面');
+  ok(B2.game && g2 && B2.game.roundId === g2.game.roundId, '重連沿用同一對局識別，避免重複開局統計');
   await sleep(1300);
   ok(!A.room.dc, '重連後倒數消失');
 
