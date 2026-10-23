@@ -1,0 +1,41 @@
+{
+  "zh-Hant": {
+    "name": "撞球對決",
+    "summary": "寫實質感的 2 人撞球：簡化九球、八號球、14-1 連續進球。可對電腦或開房間邀朋友，也能觀戰。",
+    "modes": [
+      "幼幼班",
+      "單機練習",
+      "四段 AI",
+      "線上房間",
+      "觀戰",
+      "邀請連結"
+    ],
+    "controls": "在桌面拖曳瞄準、拉力度條，按「擊球」出桿；擊球點可展開調旋轉"
+  },
+  "zh-Hans": {
+    "name": "撞球对决",
+    "summary": "写实质感的 2 人撞球：简化九球、八号球、14-1 连续进球。可对电脑或开房间邀朋友，也能观战。",
+    "modes": [
+      "幼幼班",
+      "单机练习",
+      "四段 AI",
+      "线上房间",
+      "观战",
+      "邀请连结"
+    ],
+    "controls": "在桌面拖曳瞄准、拉力度条，按「击球」出杆；击球点可展开调旋转"
+  },
+  "en": {
+    "name": "Pool Duel",
+    "summary": "Realistic 2-player pool: simplified nine-ball, eight-ball, and 14-1 continuous. Play the computer or open a room for a friend, and spectate too.",
+    "modes": [
+      "Little Kids Mode",
+      "Solo Practice",
+      "Four AI Levels",
+      "Online Room",
+      "Spectate",
+      "Invite Link"
+    ],
+    "controls": "Drag on the table to aim and pull the power bar, then press Shoot; open the cue-ball panel to add spin"
+  }
+}
