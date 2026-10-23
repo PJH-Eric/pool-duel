@@ -9,10 +9,17 @@
     '香香', '呼呼', '軟軟', '閃閃', '溜溜', '甜甜', '毛毛', '咚咚'];
   const ANIMAL = ['小熊', '小兔', '小雞', '小貓', '小狗', '小企鵝', '小青蛙', '小熊貓',
     '小刺蝟', '小海豹', '小松鼠', '小恐龍'];
+  const ADJ_HANS = ['蓝蓝', '飞快', '勇敢', '爱困', '圆圆', '亮亮', '胖胖', '跳跳',
+    '香香', '呼呼', '软软', '闪闪', '溜溜', '甜甜', '毛毛', '咚咚'];
+  const ANIMAL_HANS = ['小熊', '小兔', '小鸡', '小猫', '小狗', '小企鹅', '小青蛙', '小熊猫',
+    '小刺猬', '小海豹', '小松鼠', '小恐龙'];
 
   /** 用亂數函式（預設 Math.random）組一個暱稱 */
   function random(rand) {
     const r = rand || Math.random;
+    if (root.I18N && root.I18N.lang === 'zh-Hans') {
+      return ADJ_HANS[Math.floor(r() * ADJ_HANS.length)] + ANIMAL_HANS[Math.floor(r() * ANIMAL_HANS.length)];
+    }
     if (root.I18N && root.I18N.lang === 'en') {
       const adj = ['Blue', 'Quick', 'Brave', 'Cozy', 'Round', 'Bright', 'Soft', 'Happy'];
       const animal = ['Bear', 'Bunny', 'Chick', 'Kitty', 'Puppy', 'Penny', 'Frog', 'Panda'];

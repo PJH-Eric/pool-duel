@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node tests/analytics.js && node tests/localization.js && node scripts/verify-parallel.js",
+    "test": "node tests/analytics.js && node tests/localization.js && node scripts/verify-parallel.js && node tests/i18n-hans.js",
     "test:pockets": "node tests/pocket-check.js",
     "verify": "node scripts/verify-parallel.js",
     "verify:full": "node scripts/verify-parallel.js --full",
