@@ -8,6 +8,6 @@
   "genre": "運動",
   "players": "1-2",
   "iconUrl": "https://pjh-eric.github.io/pool-duel/favicon-96.png",
-  "ogImage": "https://pjh-eric.github.io/pool-duel/og-image.png",
-  "ogImageAlt": "撞球對決遊戲圖示"
+  "ogImage": "https://pjh-eric.github.io/pool-duel/assets/images/cover.webp",
+  "ogImageAlt": "撞球對決 遊戲封面"
 }
