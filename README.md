@@ -49,8 +49,8 @@ Pages 部署後會自動讀取線上的 `version.json`，比對本次 commit SHA
 - 後端：`render.yaml`（Render，Singapore，零依賴）。環境變數 `ALLOW_ORIGIN` 填前端網域。
 - 前端：`.github/workflows/pages.yml` 會把 `public/` 發到 GitHub Pages，並用
   `scripts/inject-server-url.js` 把 `GAME_SERVER_URL` 注入 `public/js/config.js`。
-  改 workflow 裡的 `DEFAULT_GAME_SERVER_URL` 即可換後端。
-- 尚未建立任何雲端服務；要上線請自行建立 Render 服務後再把網址填進去。
+  在 GitHub repository Variables 設定 `GAME_SERVER_URL` 為後端的 HTTPS 網址。
+- 本機設定檔不代表雲端服務已建立；實際服務與部署狀態以 GitHub Actions 及 Render 為準。
 
 ## 目錄
 
@@ -62,3 +62,11 @@ tests/               verify.js、online-check.js
 scripts/             inject-server-url.js
 美術/                風格板與畫面稿（SVG + 預覽 PNG）
 ```
+
+## 維護與驗證產物
+
+介面支援繁體中文、簡體中文與英文；從右上角語言選單切換，新增說明文字時須同步維護三種語系。遊戲人數、操作與勝負條件以本文件的玩法說明及規則核心為準。
+
+以 `package.json` 的 scripts 為可執行指令來源；`npm test` 執行基本驗證，`npm run verify` 執行該專案列出的整合驗證。需要 Playwright、瀏覽器或網路的檢查，依各測試章節的前置條件執行。
+
+截圖、測試報告、記錄檔及快取為可重新產生的驗證產物，不屬於正式遊戲資產，也不提交版本控制。測試完成後可清除 `screenshots/`、`shots/`、`.shots/`、`test-results/`、`playwright-report/`、`coverage/`、`.cache/`、`tmp/`、`temp/` 與 `*.log`。保留正式圖片、圖示、音訊、字型、原始碼、測試案例、鎖定檔及 `.env.example`；`node_modules/` 是相依套件目錄，不能當成圖片或暫存檔一起刪除。
