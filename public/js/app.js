@@ -24,6 +24,7 @@
     clearTimeout(gtT); gtT = setTimeout(() => el.classList.remove('show'), ms || 2600);
   };
   App.show = function (name) {
+    if (root.ServerOutage) root.ServerOutage.setScreen(name);
     $$('.screen').forEach(s => s.classList.toggle('active', s.id === 'screen-' + name));
     App.screen = name;
     if (name === 'home') Hero.start(); else Hero.stop();
