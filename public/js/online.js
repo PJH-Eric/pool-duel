@@ -11,7 +11,11 @@
     on(type, fn) { (handlers[type] = handlers[type] || []).push(fn); },
     emit(type, a) { (handlers[type] || []).slice().forEach(f => { try { f(a); } catch (e) { console.error(e); } }); },
     /* key／params 是字典 key；text 是目前語言的字串（給只要文字的人） */
-    setStatus(s, key, params) { this.status = s; this.emit('status', { status: s, key: key || '', params: params || null, text: key ? root.I18N.t(key, params) : '' }); },
+    setStatus(s, key, params) {
+      this.status = s;
+      if (root.ServerOutage) root.ServerOutage.state(s === 'closed' ? 'idle' : s);
+      this.emit('status', { status: s, key: key || '', params: params || null, text: key ? root.I18N.t(key, params) : '' });
+    },
     send(o) {
       if (this.ws && this.ws.readyState === 1) {
         this.ws.send(JSON.stringify(o));
@@ -37,8 +41,10 @@
           const r = await fetch(root.Config.serverUrl + '/health', { signal: ctl.signal, cache: 'no-store' }); clearTimeout(to);
           if (r.ok) break;
         } catch (e) { /* 還沒醒 */ }
+        if (!this.wantOn) return;
         if (Date.now() - t0 > 100000) { this.setStatus('failed', 'net.failed'); this.wantOn = false; return; }
         await new Promise(r => setTimeout(r, 2200));
+        if (!this.wantOn) return;
         this.setStatus('waking', 'net.wakingWait', { n: Math.round((Date.now() - t0) / 1000) });
       }
       if (!this.wantOn) return;
