@@ -72,6 +72,7 @@ button { font-family: inherit; }
 .status-pill { align-self: center; padding: 8px 18px; border-radius: 20px; background: rgba(15,8,5,.8); border: 1px solid var(--edge); font-size: 14px; font-weight: 700; text-align: center; }
 .status-pill.warn { border-color: var(--red); color: #ffd4cc; }
 .status-pill.ok { border-color: #2f9a62; color: #bff0d3; }
+.online-count { width: fit-content; max-width: 100%; margin: 8px 0 0; padding: 6px 12px; border: 1px solid var(--edge); border-radius: 999px; background: linear-gradient(#4b2f1b, #34200f); color: #bff0d3; font-size: 13px; font-weight: 800; overflow-wrap: anywhere; }
 .field { width: 100%; min-height: 44px; padding: 8px 14px; border-radius: 12px; border: 1px solid #5a3b22; background: #130b06; color: var(--cream); font-size: 16px; font-family: inherit; box-shadow: inset 0 2px 5px rgba(0,0,0,.6); }
 .field:focus { outline: 3px solid rgba(255,215,119,.55); border-color: var(--brass); }
 .spinner { width: 34px; height: 34px; margin: 10px auto 0; border-radius: 50%; border: 4px solid rgba(255,255,255,.15); border-top-color: var(--brass); animation: spin 1s linear infinite; }

@@ -47,6 +47,7 @@ function json(res, code, data) { res.writeHead(code, { 'Content-Type': 'applicat
 const people = new Map();
 
 const io = {
+  onlineCount() { return people.size; },
   send(personId, msg) { const it = people.get(personId); if (it && it.socket.alive) it.socket.sendJSON(msg); },
   lobbyIds() { const out = []; for (const [id, it] of people) if (!it.person.roomId && it.person.ready) out.push(id); return out; },
   aliveIds() {

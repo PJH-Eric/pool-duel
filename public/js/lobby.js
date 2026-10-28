@@ -12,7 +12,7 @@
   const firstChar = n => Array.from(String(n || '?'))[0] || '?';
   const QUICK = [1, 2, 3, 4, 5, 6, 7];
   const L = {
-    room: null, rooms: [], pendingInvite: null, awaitJoin: 0, wasInRoom: false, lastChatAt: 0, dcEnd: 0, dcTimer: 0,
+    room: null, rooms: [], onlineCount: null, pendingInvite: null, awaitJoin: 0, wasInRoom: false, lastChatAt: 0, dcEnd: 0, dcTimer: 0,
     create: { kind: 'nine', aim: 'full', pockets: 'standard' },
     inGame: false, status: null, recon: null, inviteInfo: null
   };
@@ -70,6 +70,7 @@
   Net.on('status', s => {
     if (s.status === 'open') { setStatus('lobby.connected', 'ok'); setTimeout(() => { if (Net.status === 'open' && !L.room) setStatus(''); }, 1800); }
     else if (s.key) setStatus(s.key, s.status === 'failed' ? 'warn' : '', s.params);
+    if (s.status !== 'open') { L.onlineCount = null; paintOnlineCount(); }
     const ov = $('#reconnectOverlay');
     if (s.status === 'retrying' || s.status === 'waking' || s.status === 'connecting') { if (L.wasInRoom) { ov.classList.remove('hidden'); setRecon(s.key || 'net.reconnecting', s.params); } }
     if (s.status === 'failed' && L.wasInRoom) { ov.classList.add('hidden'); roomLost(T('toast.lostServer')); }
@@ -86,7 +87,7 @@
     app().toast(text); app().show('lobby'); setStatus('');
     if (Net.status === 'open') Net.send({ type: 'rooms' });
   }
-  Net.on('rooms', m => { L.rooms = m.rooms; renderRooms(); });
+  Net.on('rooms', m => { L.rooms = m.rooms; L.onlineCount = Number.isInteger(m.online) && m.online >= 0 ? m.online : null; paintOnlineCount(); renderRooms(); });
   Net.on('error', m => {
     if (m.code === 'invite') showInviteError(m.text, m.params);
     else {
@@ -178,6 +179,13 @@
       b.onclick = () => { commitNick(); Net.send({ type: 'join', roomId: r.id, role: canPlay ? 'player' : 'spectator' }); };
       row.appendChild(b); box.appendChild(row);
     });
+  }
+
+  function paintOnlineCount() {
+    const el = $('#lobbyOnlineCount');
+    if (!el) return;
+    el.hidden = !Number.isInteger(L.onlineCount);
+    el.textContent = Number.isInteger(L.onlineCount) ? T('lobby.onlineCount', { n: L.onlineCount }) : '';
   }
 
   /* ---------- 房間 ---------- */
