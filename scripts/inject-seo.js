@@ -18,7 +18,10 @@ function validate(cfg, gaId) {
   if (cfg.title.length > 40 || cfg.description.length < 40 || cfg.description.length > 120) throw new Error('SEO 文案長度錯誤');
   if (!/^G-[A-Z0-9]+$/.test(gaId)) throw new Error('GA_MEASUREMENT_ID 格式錯誤');
   if (cfg.ogImage && !/^https:\/\//.test(cfg.ogImage)) throw new Error('ogImage 必須是 HTTPS 網址');
-  if (cfg.ogImage && !/\/assets\/images\/cover\.webp$/.test(cfg.ogImage)) throw new Error('ogImage 必須指向 WebP 遊戲封面');
+  // og:image 使用 1200×630 的 SEO 分享圖（PNG）；cover 另行用於結構化資料。
+  if (cfg.ogImage && !/\/og-image\.png$/.test(cfg.ogImage)) throw new Error('ogImage 必須指向 og-image.png 分享圖');
+  if (cfg.coverImage && !/\/assets\/images\/cover\.webp$/.test(cfg.coverImage)) throw new Error('coverImage 必須指向 WebP 遊戲封面');
+  if (cfg.coverImage && !/^https:\/\//.test(cfg.coverImage)) throw new Error('coverImage 必須是 HTTPS 網址');
 }
 
 function inject(root, env = process.env) {
@@ -31,7 +34,6 @@ function inject(root, env = process.env) {
   if (!/<title\b[^>]*>[\s\S]*?<\/title>/i.test(html)) throw new Error('index.html 缺少 title');
   const descriptionTag = html.match(/<meta\b(?=[^>]*\bname=["']description["'])[^>]*>/i);
   const descriptionKey = descriptionTag && descriptionTag[0].match(/data-i18n-content="([^"]+)"/);
-  const imageHeight = cfg.ogImage ? '675' : '';
   // 保留界線，重複建置不會累積標籤。所有檢查完成才寫入產物。
   html = html.replace(/<!--SEO:HEAD-->[\s\S]*?<!--SEO:END-->/, MARK)
     .replace(/<meta\b(?=[^>]*\bname=["']description["'])[^>]*>\s*/gi, '')
@@ -41,7 +43,7 @@ function inject(root, env = process.env) {
     name: cfg.title.split('｜')[0], url: cfg.siteUrl, description: cfg.description,
     applicationCategory: 'GameApplication', operatingSystem: 'Any', inLanguage: 'zh-Hant',
     genre: cfg.genre, offers: { '@type': 'Offer', price: '0', priceCurrency: 'TWD' },
-    image: cfg.ogImage || undefined, thumbnailUrl: cfg.ogImage || undefined,
+    image: cfg.coverImage || cfg.ogImage || undefined, thumbnailUrl: cfg.coverImage || cfg.ogImage || undefined,
     isPartOf: { '@type': 'WebSite', url: cfg.lobbyUrl }
   };
   const head = [
@@ -60,9 +62,9 @@ function inject(root, env = process.env) {
     '<meta property="og:description" content="' + esc(cfg.description) + '">',
     '<meta property="og:url" content="' + esc(cfg.siteUrl) + '">',
     cfg.ogImage && '<meta property="og:image" content="' + esc(cfg.ogImage) + '">',
-    cfg.ogImage && '<meta property="og:image:type" content="image/webp">',
+    cfg.ogImage && '<meta property="og:image:type" content="image/png">',
     cfg.ogImage && '<meta property="og:image:width" content="1200">',
-    cfg.ogImage && '<meta property="og:image:height" content="' + imageHeight + '">',
+    cfg.ogImage && '<meta property="og:image:height" content="630">',
     cfg.ogImage && '<meta property="og:image:alt" content="' + esc(cfg.ogImageAlt || cfg.title) + '">',
     '<meta name="twitter:card" content="' + (cfg.ogImage ? 'summary_large_image' : 'summary') + '">',
     '<meta name="twitter:title" content="' + esc(cfg.title) + '">',

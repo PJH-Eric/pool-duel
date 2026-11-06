@@ -40,12 +40,12 @@ try {
   const ld = JSON.parse(built.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1]);
   assert.equal(ld.url, cfg.siteUrl);
   if (cfg.ogImage) {
-    assert.equal(ld.image, cfg.ogImage);
-    assert.equal(ld.thumbnailUrl, cfg.ogImage);
+    assert.equal(ld.image, cfg.coverImage);
+    assert.equal(ld.thumbnailUrl, cfg.coverImage);
     assert.ok(built.includes('property="og:image" content="' + cfg.ogImage + '"'));
-    assert.ok(built.includes('property="og:image:type" content="image/webp"'));
+    assert.ok(built.includes('property="og:image:type" content="image/png"'));
     assert.ok(built.includes('property="og:image:width" content="1200"'));
-    assert.ok(built.includes('property="og:image:height" content="675"'));
+    assert.ok(built.includes('property="og:image:height" content="630"'));
     assert.ok(built.includes('name="twitter:image" content="' + cfg.ogImage + '"'));
   }
   const sitemap = fs.readFileSync(path.join(temp, 'public/sitemap.xml'), 'utf8');
