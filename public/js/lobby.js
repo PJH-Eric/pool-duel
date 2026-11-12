@@ -75,6 +75,29 @@
     if (s.status === 'retrying' || s.status === 'waking' || s.status === 'connecting') { if (L.wasInRoom) { ov.classList.remove('hidden'); setRecon(s.key || 'net.reconnecting', s.params); } }
     if (s.status === 'failed' && L.wasInRoom) { ov.classList.add('hidden'); roomLost(T('toast.lostServer')); }
   });
+  /* ---------- 大廳聊天室（左下氣泡）：跟房間聊天分開 ---------- */
+  const lobbyChat = root.LobbyChatUI = root.LobbyChat ? root.LobbyChat.create({
+    game: 'pool-duel',
+    mount: '#app',
+    watch: '#screen-lobby',
+    getName: () => ($('#nickInput') && $('#nickInput').value.trim()) || myName(),
+    setName: n => { $('#nickInput').value = n.slice(0, 12); commitNick(); },
+    join: name => Net.send({ type: 'lobbychat', op: 'join', name }),
+    leave: () => Net.send({ type: 'lobbychat', op: 'leave' }),
+    send: (text, name) => Net.send({ type: 'lobbychat', op: 'send', text, name }),
+    joinRoom: code => { commitNick(); Net.send({ type: 'join', roomId: code, role: 'player' }); }
+  }) : null;
+  if (lobbyChat) {
+    lobbyChat.setConnected(Net.status === 'open');
+    Net.on('status', s => lobbyChat.setConnected(s.status === 'open'));
+    Net.on('lobbychat', m => {
+      if (m.op === 'history') lobbyChat.history(m.history, m.online);
+      else if (m.op === 'msg') lobbyChat.add(m.msg);
+      else if (m.op === 'online') lobbyChat.online(m.online);
+      else if (m.op === 'error') lobbyChat.error(m.code);
+    });
+  }
+
   Net.on('welcome', m => {
     $('#nickInput').value = m.name; Store.set('nickname', m.name);
     if (L.pendingInvite) peekInvite();

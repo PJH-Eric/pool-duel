@@ -132,6 +132,7 @@ ws.attach(server, {
       const it = people.get(person.id);
       if (!it || it.socket !== socket) return;           // 已經被新連線接手，不能把新連線判成斷線
       people.delete(person.id);
+      proto.dropChat(person.id);
       console.log('[ws] 連線關閉：' + person.id + '（' + (person.name || '沒名字') + '）線上 ' + people.size + ' 人');
       if (!person.ready) return;
       hub.markDisconnected(person.id);

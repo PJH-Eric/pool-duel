@@ -166,10 +166,20 @@
       body.appendChild(row);
     });
     syncSettings();
+    /* 大廳聊天室開關（狀態存在聊天元件自己的 localStorage） */
+    const LC = root.LobbyChatUI;
+    if (LC) {
+      const row = document.createElement('div'); row.className = 'set-row'; row.dataset.k = '_lobbychat';
+      const tx = document.createElement('div'); tx.className = 'tx'; tx.innerHTML = '<b>' + esc(LC.text('set')) + '</b><span>' + esc(LC.text('setSub')) + '</span>';
+      const t = document.createElement('button'); t.type = 'button'; t.className = 'toggle'; t.setAttribute('role', 'switch'); t.setAttribute('aria-label', LC.text('set'));
+      t.onclick = () => { LC.setEnabled(!LC.isEnabled()); Sound.unlock(); Sound.sfx.click(); syncSettings(); };
+      row.appendChild(tx); row.appendChild(t); body.appendChild(row);
+      syncSettings();
+    }
   }
   function syncSettings() {
     $$('#setBody .set-row').forEach(row => {
-      const k = row.dataset.k, v = k === '_lang' ? root.I18N.lang : Store.get(k);
+      const k = row.dataset.k, v = k === '_lang' ? root.I18N.lang : k === '_lobbychat' ? !!(root.LobbyChatUI && root.LobbyChatUI.isEnabled()) : Store.get(k);
       const t = row.querySelector('.toggle'); if (t) t.setAttribute('aria-checked', v ? 'true' : 'false');
       row.querySelectorAll('.seg-b, .swatch').forEach(b => b.setAttribute('aria-checked', b.dataset.v === v ? 'true' : 'false'));
       const s = row.querySelector('.set-slider'); if (s) s.__render && s.__render();
@@ -198,7 +208,7 @@
   $('#setClose').onclick = $('#setDone').onclick = closeSettings;
   $('#settingsModal').addEventListener('pointerdown', e => { if (e.target.id === 'settingsModal') closeSettings(); });
   $('#settingsModal').addEventListener('keydown', e => { if (e.key === 'Escape') { closeSettings(); e.stopPropagation(); } trapTab(e, $('#settingsModal')); });
-  $('#setReset').onclick = () => { Store.reset(); buildSettings(); applySettings(); App.toast(T('toast.resetDone')); };
+  $('#setReset').onclick = () => { Store.reset(); if (root.LobbyChatUI) root.LobbyChatUI.setEnabled(true); buildSettings(); applySettings(); App.toast(T('toast.resetDone')); };
   document.addEventListener('click', e => { const g = e.target.closest('[data-gear], #homeGear'); if (g) App.openSettings(); });
 
   /* ---------- 通用滑桿 ---------- */

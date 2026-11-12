@@ -415,3 +415,12 @@ button { font-family: inherit; }
 .lobby-pill:focus-visible { outline: 3px solid #fff3c4; outline-offset: 2px; }
 @media (max-width: 380px) { .lobby-pill { padding: 0 12px 0 4px; font-size: 14px; } }
 @media (max-height: 420px) { .lobby-pill { min-height: 40px; } }
+
+/* ---------- 大廳聊天室：套用撞球對決配色 ---------- */
+body .lc-root {
+  --lc-accent: var(--brass); --lc-accent-ink: var(--bg0);
+  --lc-panel-bg: var(--bg2); --lc-panel-solid: var(--bg1);
+  --lc-ink: var(--cream); --lc-muted: var(--muted); --lc-line: var(--edge);
+  --lc-field-bg: var(--bg0); --lc-sys-bg: rgba(227, 168, 64, .14); --lc-name: var(--brass-l);
+  --lc-font: var(--font); --lc-radius: var(--r); --lc-z: 55;
+}
