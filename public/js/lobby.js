@@ -261,7 +261,7 @@
   function inviteUrl(token) {
     let u = location.origin + location.pathname + '?invite=' + encodeURIComponent(token);
     if (root.Config && root.Config.source === 'query' && root.Config.serverUrl) u += '&server=' + encodeURIComponent(root.Config.serverUrl);
-    return u;
+    return root.GameBackend?.pinInvite(u) ?? u;
   }
   function renderInvite() {
     const r = L.room, box = $('#inviteBox'); if (!r) return;
