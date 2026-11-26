@@ -424,3 +424,42 @@ body .lc-root {
   --lc-field-bg: var(--bg0); --lc-sys-bg: rgba(227, 168, 64, .14); --lc-name: var(--brass-l);
   --lc-font: var(--font); --lc-radius: var(--r); --lc-z: 55;
 }
+
+.home-support {
+  position: absolute;
+  top: calc(14px + env(safe-area-inset-top));
+  right: calc(130px + env(safe-area-inset-right));
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  gap: 5px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 10px;
+  font-size: .875rem;
+  font-weight: 800;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.home-support:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+
+.home-support .support-label:not([lang="zh-Hant"]),
+:is(html:lang(zh-Hans), html:lang(zh-CN)) .home-support .support-label[lang="zh-Hant"],
+html:lang(en) .home-support .support-label[lang="zh-Hant"] { display: none; }
+:is(html:lang(zh-Hans), html:lang(zh-CN)) .home-support .support-label[lang="zh-Hans"],
+html:lang(en) .home-support .support-label[lang="en"] { display: inline; }
+
+@media (max-width: 480px) {
+  .home-support {
+    flex-direction: column;
+    gap: 2px;
+    width: 50px;
+    padding-inline: 3px;
+    font-size: 11px;
+    letter-spacing: 0;
+  }
+  .home-support > [aria-hidden="true"] { font-size: 1rem; }
+}
